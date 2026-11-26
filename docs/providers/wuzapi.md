@@ -916,3 +916,15 @@ Sem suporte, por falta de rota ou de dado no contrato: `instance.pairingCode` (a
 `channels.create/getInfo/delete/getMessages/markViewed/reactToPost` (sem rota), `business.*`
 (`/user/business-profile` consulta o perfil de OUTRO número; o contrato é do perfil próprio) e
 `calls.make` (sem rota).
+
+## Correções vindas do gateway (fork BF, nov/2026)
+
+Achados do teste de paridade do `bf-wa-gateway` com fixtures anônimas; todos aditivos.
+
+- **Mensagem apagada**: `protocolMessage` REVOKE (`type` 0, ausente ou `"REVOKE"`) vira o evento `message.deleted` (ADR-0023) com `messageId` = `protocolMessage.key.ID`.
+- **Nota de voz**: `audioMessage.PTT` -> `MediaRef.voice` (`true` PTT, `false` áudio comum); `kind` segue `audio`.
+- **Mídia com `s3`**: precedência submensagem do protobuf > `s3` > raiz para `mimeType`/`filename`/`size`; nome sem ponto ganha a extensão do mimetype.
+- **Mídia sem `s3`/`base64`**: `media.url` fica indefinida (a URL do CDN é cifrada; o descritor segue em `raw`); sem nome, `filename` = `anexo-<id><ext>`.
+- **Citação**: `quotedParticipant` em `SendTextInput`/`SendMediaInput` vira `ContextInfo.Participant`. Sem ele, só em chat 1:1 o chat é assumido; em grupo a mensagem sai SEM citação (a wuzapi responde 400 sem `Participant` e inventar o autor cita a pessoa errada).
+- **markRead**: `senderId` -> `SenderPhone` (aceita `@lid`); `ChatPhone`/`SenderPhone` são os campos priorizados pelo handler (`markReceipt`), `Chat`/`Sender` são legados.
+- **LID próprio**: `instance.getSelf()` (`GET /session/status` + `GET /user/lid/{dígitos}`, 404 = sem `lid`) e `connection.update` do `PairSuccess` com `selfJid`/`selfLid`.
