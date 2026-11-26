@@ -91,7 +91,7 @@ Todos com `Authorization: Bearer`. `{cid}` = `conversationId`.
 | Ligações | `/v1/whatsapp/calling`, `/v1/whatsapp/calls` | **Não em coexistência** [doc]. |
 | Editar/apagar mensagem | `PATCH`/`DELETE .../messages/{messageId}` | Doc do endpoint: WhatsApp **não suportado (400)**. [doc-conflito]: a página de eventos diz que `message.deleted` dispara quando o negócio apaga via DELETE. Tratar como não suportado até teste real. |
 
-Formato do destinatário: `participantId` = telefone em dígitos com DDI, sem `+` (ex.: `5511999990000`). `sender.phoneNumber` nos webhooks vem E.164 com `+`; `sender.id` vem sem `+` ou é o BSUID [doc].
+Formato do destinatário: `participantId` = telefone em dígitos com DDI, sem `+` (ex.: `15550100001`). `sender.phoneNumber` nos webhooks vem E.164 com `+`; `sender.id` vem sem `+` ou é o BSUID [doc].
 
 ## Webhooks
 
