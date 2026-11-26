@@ -1,0 +1,25 @@
+{
+  "type": "Message",
+  "userID": "1",
+  "instanceName": "minha-sessao",
+  "event": {
+    "Info": {
+      "ID": "3EB0FAKE00000000RCT01",
+      "Chat": "5511900000000@s.whatsapp.net",
+      "Sender": "5511900000000@s.whatsapp.net",
+      "IsFromMe": false,
+      "IsGroup": false,
+      "Timestamp": "2026-07-11T10:40:00Z"
+    },
+    "Message": {
+      "reactionMessage": {
+        "key": {
+          "remoteJID": "5511900000000@s.whatsapp.net",
+          "fromMe": true,
+          "ID": "3EB0FAKE00000000ORIG3"
+        },
+        "text": "👍"
+      }
+    }
+  }
+}

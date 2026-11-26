@@ -209,6 +209,8 @@ Cobertura 3/3, confiança Alta para as 3 — a MELHOR cobertura da fila junto co
 
 ## Etiquetas — NÃO implementado (ADR-0016)
 
+> **Atualização (fork BF Labs):** o fork `bf-wuzapi` tem a rota que faltava; ver "Cobertura estendida no fork BF" no fim deste documento. O texto abaixo descreve o wuzapi upstream.
+
 **Busca negativa confirmada, 0/6**: nenhuma capability de `labels.*` é declarada nem implementada
 por este adapter. Busca dedicada no `API.md` e no código-fonte (`handlers.go`) não encontrou
 nenhuma rota, campo ou struct relacionada a etiquetas/labels/tags do WhatsApp Business — limitação
@@ -297,12 +299,16 @@ operações.
 
 ### `chats.mute`/`chats.unmute`/`chats.pin`/`chats.unpin` — não implementadas, sem endpoint
 
+> **Atualização (fork BF Labs):** o fork `bf-wuzapi` tem a rota que faltava; ver "Cobertura estendida no fork BF" no fim deste documento. O texto abaixo descreve o wuzapi upstream.
+
 Busca exaustiva em `routes.go` (todas as rotas registradas via `s.router.Handle(...)`, branch
 `main`, 2026-07-12) não encontra nenhum handler equivalente a mutar ou fixar uma conversa — confirma
 o achado já registrado em ADR-0012 para este subconjunto específico. Se uma versão futura do
 servidor adicionar esses endpoints, esta seção precisa ser revisitada.
 
 ### `chats.markRead`/`chats.markUnread` — não implementadas, apesar de `POST /chat/markread` existir
+
+> **Atualização (fork BF Labs):** o fork `bf-wuzapi` tem a rota que faltava; ver "Cobertura estendida no fork BF" no fim deste documento. O texto abaixo descreve o wuzapi upstream.
 
 Diferente do subconjunto acima, **existe** um endpoint `POST /chat/markread` (`handlers.go`, func
 `MarkRead`; registrado em `routes.go`) — achado que a pesquisa resumida em ADR-0012 não previu
@@ -882,3 +888,31 @@ Uso: `wuzapi({ ..., webhookHmacKey })` faz `parseWebhook` verificar antes de pro
 exige `WebhookInput.rawBody`); `wa.webhooks.verify({ headers, rawBody, body })` (novo no core, via
 `WaAdapter.verifyWebhook` opcional) só verifica; `verifyWuzapiSignature(rawBody, signature, key)` é a
 função pura exportada por `waconector/wuzapi`.
+
+### Cobertura estendida no fork BF (55/72 capabilities, eram 42)
+
+Rotas do fork `bf-wuzapi` (`routes.go`, `handlers_*.go`) que não existem no upstream; contra um
+wuzapi upstream elas respondem 404 do servidor:
+
+- `chats.mute`/`unmute` -> `POST /chat/mute {Chat, Mute}` (sem duração: indeterminado).
+- `chats.pin`/`unpin` -> `POST /chat/pinchat {Chat, Pin}` (fixa a conversa).
+- `chats.markRead`/`markUnread` -> `POST /chat/unread {Chat, Unread}` (`Unread:false` lê a conversa inteira).
+- `labels.update`/`delete`/`addToChat`/`removeFromChat` -> `POST /labels/edit` e `/labels/chat`
+  (`LabelID` numérico; `color` 0-19 obrigatório no `update`).
+- `channels.follow`/`unfollow` -> `POST /newsletter/join` e `/newsletter/leave {NewsletterJID}`.
+- `messages.download` -> `POST /chat/download{image,video,audio,document,sticker}` com o descritor
+  cifrado tirado de `raw` (webhook); resposta `{Mimetype, Data}` (data URI). Se o webhook já trouxe
+  `s3.url`, baixe a URL direto.
+- `messages.sendText` com `mentions` -> `ContextInfo.MentionedJID`.
+- Eventos: `PairError`/`ClientOutdated`/`TemporaryBan` -> `disconnected`; `KeepAliveTimeout` ->
+  `connecting` e `KeepAliveRestored` -> `connected` (suposição); reação recebida preenche
+  `WaMessage.reaction`.
+
+Sem suporte, por falta de rota ou de dado no contrato: `instance.pairingCode` (a rota
+`/session/pairphone` exige o telefone e `InstanceApi.connect()` não o recebe), `messages.forward`
+(sem rota), `messages.star`/`unstar` (rota `/chat/star` exige `FromMe`, que o contrato não carrega),
+`messages.pin`/`unpin` (`/chat/pin` fixa `FromMe=false` e exige `Sender` em grupo),
+`labels.list` (sem rota de leitura), `labels.create` (o id numérico é escolhido pelo chamador),
+`channels.create/getInfo/delete/getMessages/markViewed/reactToPost` (sem rota), `business.*`
+(`/user/business-profile` consulta o perfil de OUTRO número; o contrato é do perfil próprio) e
+`calls.make` (sem rota).

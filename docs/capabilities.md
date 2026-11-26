@@ -17,7 +17,7 @@ Nenhuma linha aqui é escrita à mão.
 - **evolution**: 53/72
 - **uazapi**: 66/72
 - **zapi**: 48/72
-- **wuzapi**: 42/72
+- **wuzapi**: 55/72
 - **whapi**: 68/72
 - **quepasa**: 24/72
 - **wppconnect**: 57/72
@@ -52,7 +52,7 @@ Nenhuma linha aqui é escrita à mão.
 | `messages.sendLocation` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `messages.sendContactCard` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `messages.sendPoll` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `messages.download` | ✅ | ✅ | ✅ | — | — | ✅ | — | — | — |
+| `messages.download` | ✅ | ✅ | ✅ | — | ✅ | ✅ | — | — | — |
 
 ### `groups.*`
 
@@ -92,12 +92,12 @@ Nenhuma linha aqui é escrita à mão.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `chats.archive` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `chats.unarchive` | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `chats.mute` | ✅ | ✅ | ✅ | ✅ | — | ✅ | — | ✅ | — |
-| `chats.unmute` | ✅ | — | ✅ | ✅ | — | ✅ | — | ✅ | — |
-| `chats.pin` | ✅ | ✅ | ✅ | ✅ | — | ✅ | — | ✅ | — |
-| `chats.unpin` | ✅ | ✅ | ✅ | ✅ | — | ✅ | — | ✅ | — |
-| `chats.markRead` | ✅ | — | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ |
-| `chats.markUnread` | ✅ | — | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ |
+| `chats.mute` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ | — |
+| `chats.unmute` | ✅ | — | ✅ | ✅ | ✅ | ✅ | — | ✅ | — |
+| `chats.pin` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ | — |
+| `chats.unpin` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ | — |
+| `chats.markRead` | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `chats.markUnread` | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ### `presence.*`
 
@@ -113,10 +113,10 @@ Nenhuma linha aqui é escrita à mão.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `labels.list` | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ |
 | `labels.create` | ✅ | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | ✅ |
-| `labels.update` | ✅ | ✅ | ✅ | — | — | ✅ | ✅ | — | ✅ |
-| `labels.delete` | ✅ | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | ✅ |
-| `labels.addToChat` | ✅ | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | — |
-| `labels.removeFromChat` | ✅ | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | — |
+| `labels.update` | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | — | ✅ |
+| `labels.delete` | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `labels.addToChat` | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | — |
+| `labels.removeFromChat` | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | — |
 
 ### `channels.*`
 
@@ -126,8 +126,8 @@ Nenhuma linha aqui é escrita à mão.
 | `channels.create` | ✅ | ✅ | ✅ | ✅ | — | ✅ | — | ✅ | ✅ |
 | `channels.getInfo` | ✅ | ✅ | ✅ | — | — | ✅ | — | — | ✅ |
 | `channels.delete` | — | — | ✅ | — | — | ✅ | — | ✅ | ✅ |
-| `channels.follow` | ✅ | ✅ | ✅ | — | — | ✅ | — | — | ✅ |
-| `channels.unfollow` | ✅ | — | ✅ | — | — | ✅ | — | — | ✅ |
+| `channels.follow` | ✅ | ✅ | ✅ | — | ✅ | ✅ | — | — | ✅ |
+| `channels.unfollow` | ✅ | — | ✅ | — | ✅ | ✅ | — | — | ✅ |
 | `channels.getMessages` | ✅ | ✅ | ✅ | — | — | ✅ | — | — | — |
 | `channels.markViewed` | ✅ | — | ✅ | — | — | — | — | — | — |
 | `channels.reactToPost` | ✅ | — | ✅ | — | — | — | — | — | — |

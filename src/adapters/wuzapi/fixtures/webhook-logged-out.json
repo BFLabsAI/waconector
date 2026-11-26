@@ -1,0 +1,6 @@
+{
+  "type": "LoggedOut",
+  "userID": "1",
+  "instanceName": "minha-sessao",
+  "event": { "OnConnect": false, "Reason": 401 }
+}

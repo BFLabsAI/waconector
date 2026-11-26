@@ -347,6 +347,15 @@ function createFetchStub(): typeof globalThis.fetch {
       });
     }
 
+    // messages.download: POST /chat/downloadimage (o contrato chama sem "raw").
+    if (method === 'POST' && pathname === '/chat/downloadimage') {
+      return jsonResponse(200, {
+        code: 200,
+        success: true,
+        data: { Mimetype: 'image/png', Data: 'data:image/png;base64,ZmFrZS1pbWFnZQ==' },
+      });
+    }
+
     if (method === 'POST' && pathname === '/chat/archive') {
       return jsonResponse(200, {
         code: 200,
@@ -1162,30 +1171,27 @@ describe('wuzapi adapter: comportamento específico do provider', () => {
     ]);
   });
 
-  it('só declara "channels.list" (somente leitura — busca negativa confirmada para create/getInfo/delete/follow/unfollow) e lança UNSUPPORTED_CAPABILITY ao chamar os demais', async () => {
+  it('só declara channels.list/follow/unfollow (busca negativa para create/getInfo/delete/getMessages/markViewed/reactToPost) e lança UNSUPPORTED_CAPABILITY ao chamar os demais', async () => {
     const adapter = wuzapi(buildAdapterOptions());
     for (const capability of [
       'channels.create',
       'channels.getInfo',
       'channels.delete',
-      'channels.follow',
-      'channels.unfollow',
+      'channels.getMessages',
+      'channels.markViewed',
+      'channels.reactToPost',
     ] as const) {
       expect(adapter.capabilities).not.toContain(capability);
     }
     expect(adapter.channels?.create).toBeUndefined();
     expect(adapter.channels?.getInfo).toBeUndefined();
     expect(adapter.channels?.delete).toBeUndefined();
-    expect(adapter.channels?.follow).toBeUndefined();
-    expect(adapter.channels?.unfollow).toBeUndefined();
 
     const wa = createConnector(adapter);
     const calls = [
       () => wa.channels.create({ name: 'Canal Novo' }),
       () => wa.channels.getInfo('111111111111111111@newsletter'),
       () => wa.channels.delete('111111111111111111@newsletter'),
-      () => wa.channels.follow('111111111111111111@newsletter'),
-      () => wa.channels.unfollow('111111111111111111@newsletter'),
     ];
     for (const call of calls) {
       const failure = await call().catch((error: unknown) => error);
@@ -1248,20 +1254,6 @@ describe('wuzapi adapter: comportamento específico do provider', () => {
       (error: unknown) => error,
     );
     expect(isWaConnectorError(failure) && failure.code === 'UNSUPPORTED_CAPABILITY').toBe(true);
-  });
-
-  it('não declara chats.mute/unmute/pin/unpin/markRead/markUnread (sem endpoint equivalente confirmado no código-fonte para o contrato canônico)', () => {
-    const adapter = wuzapi(buildAdapterOptions());
-
-    expect(adapter.capabilities).not.toContain('chats.mute');
-    expect(adapter.capabilities).not.toContain('chats.unmute');
-    expect(adapter.capabilities).not.toContain('chats.pin');
-    expect(adapter.capabilities).not.toContain('chats.unpin');
-    expect(adapter.capabilities).not.toContain('chats.markRead');
-    expect(adapter.capabilities).not.toContain('chats.markUnread');
-    expect(adapter.chats?.mute).toBeUndefined();
-    expect(adapter.chats?.pin).toBeUndefined();
-    expect(adapter.chats?.markRead).toBeUndefined();
   });
 
   it('parseWebhook normaliza evento "Message" (modo json) para message.received', () => {
