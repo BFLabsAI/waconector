@@ -1,0 +1,27 @@
+{
+  "type": "Message",
+  "userID": "1",
+  "instanceName": "minha-sessao",
+  "event": {
+    "Info": {
+      "ID": "3EB0FAKE00000000RPL01",
+      "Chat": "5511900000000@s.whatsapp.net",
+      "Sender": "5511900000000@s.whatsapp.net",
+      "IsFromMe": false,
+      "IsGroup": false,
+      "Timestamp": "2026-07-11T10:30:00Z"
+    },
+    "Message": {
+      "extendedTextMessage": {
+        "text": "Sim, pode ser amanha",
+        "contextInfo": {
+          "stanzaID": "3EB0FAKE00000000ORIG1",
+          "participant": "5511999990000:3@s.whatsapp.net",
+          "quotedMessage": {
+            "conversation": "Podemos marcar para amanha?"
+          }
+        }
+      }
+    }
+  }
+}

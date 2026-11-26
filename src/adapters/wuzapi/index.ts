@@ -44,6 +44,7 @@ import type {
   MessageAck,
   MessageKind,
   PresenceState,
+  QuotedMessage,
   RejectCallInput,
   SendContactCardInput,
   SendLocationInput,
@@ -1420,6 +1421,7 @@ function mapMessageEvent(
 
   const fromMe = asBoolean(info.IsFromMe) ?? false;
   const sender = resolveSender(info, eventRecord);
+  const context = extractContext(asRecord(data.Message));
   const content = mapMessageContent(asRecord(data.Message));
 
   // Quando media_delivery inclui base64 (default do usuário), o Wuzapi anexa mimeType/base64/
@@ -1438,6 +1440,9 @@ function mapMessageEvent(
     kind: content.kind,
     text: content.text,
     media,
+    quotedId: context.quoted?.id,
+    quoted: context.quoted,
+    mentionedIds: context.mentionedIds,
     raw: rawBody,
   };
 
@@ -1486,6 +1491,58 @@ function resolveSender(
     from: from !== undefined ? stripDevice(from) : undefined,
     lid: lidSource !== undefined ? stripDevice(lidSource) : undefined,
   };
+}
+
+/** Submensagens do protobuf que carregam `contextInfo` (resposta/menção). */
+const CONTEXT_CARRIERS = [
+  'extendedTextMessage',
+  'imageMessage',
+  'videoMessage',
+  'audioMessage',
+  'documentMessage',
+  'stickerMessage',
+  'locationMessage',
+  'contactMessage',
+  'pollCreationMessage',
+] as const;
+
+/**
+ * Extrai a citação (`contextInfo.stanzaID` + `quotedMessage`) e as menções (`contextInfo.
+ * mentionedJID`) da mensagem recebida. O `contextInfo` fica dentro da submensagem (a primeira que
+ * o tiver). Aceita defensivamente variações de caixa do protojson (`stanzaID`/`stanzaId`/`StanzaID`).
+ * Sem `contextInfo` (mensagem comum), devolve vazio.
+ */
+function extractContext(message: Record<string, unknown> | undefined): {
+  quoted?: QuotedMessage;
+  mentionedIds?: string[];
+} {
+  if (!message) return {};
+  let quoted: QuotedMessage | undefined;
+  let mentionedIds: string[] | undefined;
+  for (const carrier of CONTEXT_CARRIERS) {
+    const contextInfo = asRecord(asRecord(message[carrier])?.contextInfo);
+    if (!contextInfo) continue;
+    if (!quoted) {
+      const id = asString(contextInfo.stanzaID) ?? asString(contextInfo.stanzaId);
+      if (id) {
+        const quotedContent = mapMessageContent(asRecord(contextInfo.quotedMessage));
+        const participant = asString(contextInfo.participant);
+        quoted = {
+          id,
+          text: quotedContent.text,
+          kind: asRecord(contextInfo.quotedMessage) ? quotedContent.kind : undefined,
+          from: participant !== undefined ? stripDevice(participant) : undefined,
+          media: quotedContent.media,
+        };
+      }
+    }
+    if (!mentionedIds) {
+      const mentions = asStringArray(contextInfo.mentionedJID);
+      if (mentions.length > 0) mentionedIds = mentions;
+    }
+    if (quoted && mentionedIds) break;
+  }
+  return { quoted, mentionedIds };
 }
 
 interface MessageContent {

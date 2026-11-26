@@ -10,7 +10,7 @@ const wa = createConnector(
 
 function firstMessage(body: unknown) {
   const event = wa.webhooks.parse({ body })[0];
-  if (!event || event.type !== 'message.received') {
+  if (event?.type !== 'message.received') {
     throw new Error(`evento inesperado: ${JSON.stringify(event)}`);
   }
   return event.message;

@@ -1,0 +1,34 @@
+{
+  "type": "Message",
+  "userID": "1",
+  "instanceName": "minha-sessao",
+  "event": {
+    "Info": {
+      "ID": "3EB0FAKE00000000RPL02",
+      "Chat": "120363000000000000@g.us",
+      "Sender": "270000000000002@lid",
+      "SenderAlt": "5511911111111@s.whatsapp.net",
+      "IsFromMe": false,
+      "IsGroup": true,
+      "Timestamp": "2026-07-11T10:31:00Z"
+    },
+    "Message": {
+      "imageMessage": {
+        "URL": "https://mmg.exemplo.test/cifrado/xyz.enc",
+        "mimetype": "image/png",
+        "caption": "@5511900000000 olha isso",
+        "contextInfo": {
+          "stanzaID": "3EB0FAKE00000000ORIG2",
+          "participant": "5511900000000@s.whatsapp.net",
+          "quotedMessage": {
+            "imageMessage": {
+              "mimetype": "image/jpeg",
+              "caption": "Legenda da imagem original"
+            }
+          },
+          "mentionedJID": ["5511900000000@s.whatsapp.net", "5511922222222@s.whatsapp.net"]
+        }
+      }
+    }
+  }
+}
