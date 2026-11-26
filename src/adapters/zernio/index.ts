@@ -544,6 +544,8 @@ async function uploadBase64(ctx: Ctx, media: MediaRef): Promise<string> {
         method: 'POST',
         headers: { authorization: `Bearer ${ctx.options.apiKey}` },
         body: form,
+        // Nunca seguir redirect: uma baseUrl publica nao pode empurrar o upload para a rede interna.
+        redirect: 'manual',
       },
     );
   } catch (error) {
