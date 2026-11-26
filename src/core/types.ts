@@ -76,6 +76,19 @@ export interface ReactionInfo {
   targetMessageId: string;
 }
 
+/** Resumo da mensagem citada por uma resposta (ver `WaMessage.quoted`). */
+export interface QuotedMessage {
+  /** ID da mensagem citada (mesmo valor de `WaMessage.quotedId`). */
+  id: string;
+  /** Texto (ou legenda de mídia) da mensagem citada. */
+  text?: string;
+  kind?: MessageKind;
+  /** Autor da mensagem citada, quando o provider informa. */
+  from?: string;
+  /** Mídia da mensagem citada (só descritor, sem arquivo), quando houver. */
+  media?: MediaRef;
+}
+
 /** Mensagem normalizada (recebida ou ecoada via webhook). */
 export interface WaMessage {
   id: string;
@@ -96,6 +109,10 @@ export interface WaMessage {
   text?: string;
   media?: MediaRef;
   quotedId?: string;
+  /** Mensagem citada (resposta), quando o provider entrega o conteúdo dela além do id (`quotedId`). */
+  quoted?: QuotedMessage;
+  /** JIDs mencionados (`@fulano`) na mensagem, quando o provider informa. */
+  mentionedIds?: string[];
   /** Presente quando `kind === 'reaction'`. Ver ADR-0008. */
   reaction?: ReactionInfo;
   raw: unknown;

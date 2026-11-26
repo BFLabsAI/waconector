@@ -860,3 +860,11 @@ acrescenta `base64`/`mimeType`/`fileName`. O adapter normaliza para `WaMessage.m
 `s3`, no lugar da URL cifrada do CDN do WhatsApp), `mimeType`, `filename`, `size`, `id` (= `key` do
 objeto) e, quando houver, `base64`. Base64 não é exigido. Sem nenhum dos dois, `media` traz só o
 descritor do protobuf (`kind`, `mimeType`, `size`, `url` cifrada), o bastante para `messages.download`.
+
+### Resposta (citação) e menções recebidas
+
+O `contextInfo` fica dentro da submensagem (`extendedTextMessage`, `imageMessage`, ...). O adapter
+lê `contextInfo.stanzaID` -> `WaMessage.quotedId`, e monta `WaMessage.quoted` =
+`{id, text, kind, from, media}` a partir de `quotedMessage` (texto ou legenda; `from` = `participant`
+sem sufixo de aparelho). `contextInfo.mentionedJID` -> `WaMessage.mentionedIds` (JIDs como vieram,
+podendo ser `@lid`).
