@@ -2019,16 +2019,57 @@ function attachRootMedia(
   if (!s3 && !rootBase64) return content.media;
   const kind = content.kind;
   const base = content.media;
+  // Precedência: submensagem do protobuf (dado de origem, ex.: `audio/ogg; codecs=opus` e o nome
+  // original do documento) > bloco `s3` (re-hospedagem, nome/mime podem ser sintéticos) > raiz.
+  const mimeType = base?.mimeType ?? asString(s3?.mimeType) ?? asString(eventRecord.mimeType);
+  const rawName = base?.filename ?? asString(s3?.fileName) ?? asString(eventRecord.fileName);
   return {
     kind,
     url: asString(s3?.url) ?? base?.url,
     base64: rootBase64,
-    mimeType: asString(s3?.mimeType) ?? base?.mimeType ?? asString(eventRecord.mimeType),
-    filename: asString(s3?.fileName) ?? base?.filename ?? asString(eventRecord.fileName),
-    size: asNumberLike(s3?.size) ?? base?.size,
+    mimeType,
+    filename: rawName !== undefined ? withExtension(rawName, mimeType) : undefined,
+    size: base?.size ?? asNumberLike(s3?.size),
     id: asString(s3?.key),
     voice: base?.voice,
   };
+}
+
+/** Extensão (sem ponto) para os mimetypes mais comuns de mídia do WhatsApp. */
+const MIME_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'video/mp4': 'mp4',
+  'video/3gpp': '3gp',
+  'audio/ogg': 'ogg',
+  'audio/mpeg': 'mp3',
+  'audio/mp4': 'm4a',
+  'audio/aac': 'aac',
+  'audio/amr': 'amr',
+  'application/pdf': 'pdf',
+  'application/zip': 'zip',
+  'application/msword': 'doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  'application/vnd.ms-excel': 'xls',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+  'application/vnd.ms-powerpoint': 'ppt',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
+  'text/plain': 'txt',
+  'text/csv': 'csv',
+};
+
+/** `audio/ogg; codecs=opus` -> `.ogg`; mimetype desconhecido ou ausente -> `''`. */
+function extensionFromMime(mimeType: string | undefined): string {
+  const essence = mimeType?.split(';')[0]?.trim().toLowerCase();
+  const ext = essence ? MIME_EXTENSIONS[essence] : undefined;
+  return ext ? `.${ext}` : '';
+}
+
+/** Completa um nome sem extensão (`contrato-final`) com a do mimetype; nomes com ponto ficam como estão. */
+function withExtension(fileName: string, mimeType: string | undefined): string {
+  return fileName.includes('.') ? fileName : `${fileName}${extensionFromMime(mimeType)}`;
 }
 
 function mapReceiptEvent(

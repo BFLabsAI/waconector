@@ -3,6 +3,8 @@ import { createConnector } from '../../src';
 import { wuzapi } from '../../src/adapters/wuzapi';
 import pttFixture from '../../src/adapters/wuzapi/fixtures/webhook-message-audio-ptt.json';
 import audioS3Fixture from '../../src/adapters/wuzapi/fixtures/webhook-message-audio-s3.json';
+import documentS3Fixture from '../../src/adapters/wuzapi/fixtures/webhook-message-document-s3.json';
+import documentNoExtFixture from '../../src/adapters/wuzapi/fixtures/webhook-message-document-sem-extensao.json';
 import imageS3Fixture from '../../src/adapters/wuzapi/fixtures/webhook-message-image-s3.json';
 
 const wa = createConnector(
@@ -34,10 +36,10 @@ describe('wuzapi: mídia recebida via bloco s3 do webhook', () => {
     expect(message.raw).toEqual(imageS3Fixture);
   });
 
-  it('o s3 tem precedência sobre o mimetype do protobuf (audio com codecs)', () => {
+  it('a submensagem do protobuf tem precedência sobre o s3 (audio com codecs)', () => {
     const message = firstMessage(audioS3Fixture);
     expect(message.kind).toBe('audio');
-    expect(message.media?.mimeType).toBe('audio/ogg');
+    expect(message.media?.mimeType).toBe(audioS3Fixture.event.Message.audioMessage.mimetype);
     expect(message.media?.url).toBe(audioS3Fixture.s3.url);
     expect(message.media?.size).toBe(9120);
   });
@@ -94,5 +96,37 @@ describe('wuzapi: nota de voz (audioMessage.PTT)', () => {
     };
     body.event.Message.audioMessage.PTT = undefined;
     expect(firstMessage(body).media?.voice).toBe(false);
+  });
+});
+
+describe('wuzapi: precedência submensagem > s3 > raiz (mimeType/fileName)', () => {
+  it('nota de voz: mimetype com codecs vence o do s3; nome vem do s3 (a submensagem não tem)', () => {
+    const media = firstMessage(pttFixture).media;
+    expect(media?.mimeType).toBe('audio/ogg; codecs=opus');
+    expect(media?.filename).toBe('FIXT-AUDIO-0001.ogg');
+    expect(media?.url).toBe(pttFixture.s3.url);
+    expect(media?.size).toBe(9100);
+  });
+
+  it('documento: fileName original da submensagem vence o nome sintético do s3', () => {
+    const media = firstMessage(documentS3Fixture).media;
+    expect(media?.filename).toBe('relatorio.pdf');
+    expect(media?.mimeType).toBe('application/pdf');
+    expect(media?.size).toBe(120400);
+  });
+
+  it('nome sem ponto ganha a extensão do mimetype', () => {
+    const media = firstMessage(documentNoExtFixture).media;
+    expect(media?.filename).toBe('contrato-final.pdf');
+    expect(media?.size).toBe(5300);
+  });
+
+  it('mimetype desconhecido não inventa extensão', () => {
+    const body = structuredClone(documentNoExtFixture) as {
+      event: { Message: { documentMessage: Record<string, unknown> } };
+      s3: Record<string, unknown>;
+    };
+    body.event.Message.documentMessage.mimetype = 'application/x-desconhecido';
+    expect(firstMessage(body).media?.filename).toBe('contrato-final');
   });
 });

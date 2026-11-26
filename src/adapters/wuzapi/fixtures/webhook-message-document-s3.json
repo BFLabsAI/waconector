@@ -1,0 +1,45 @@
+{
+  "type": "Message",
+  "event": {
+    "Info": {
+      "Chat": "5511900000021@s.whatsapp.net",
+      "Sender": "5511900000021@s.whatsapp.net",
+      "IsFromMe": false,
+      "IsGroup": false,
+      "AddressingMode": "pn",
+      "SenderAlt": "",
+      "RecipientAlt": "",
+      "BroadcastListOwner": "",
+      "BroadcastRecipients": null,
+      "ID": "FIXT-DOC-0001",
+      "ServerID": 0,
+      "Type": "media",
+      "PushName": "Fulano Teste",
+      "Timestamp": "2026-11-05T12:00:00-03:00",
+      "Category": "",
+      "Multicast": false,
+      "MediaType": "document",
+      "VerifiedName": null,
+      "Edit": "",
+      "DeviceSentMeta": null
+    },
+    "Message": {
+      "documentMessage": {
+        "mimetype": "application/pdf",
+        "fileName": "relatorio.pdf",
+        "caption": "",
+        "fileLength": 120400
+      }
+    }
+  },
+  "s3": {
+    "url": "https://s3.exemplo.invalid/midia/FIXT-DOC-0001.pdf?X-Amz-Signature=sintetica&X-Amz-Expires=3600",
+    "key": "usuario-fixture/FIXT-DOC-0001.pdf",
+    "bucket": "bucket-fixture",
+    "size": 120400,
+    "mimeType": "application/pdf",
+    "fileName": "FIXT-DOC-0001.pdf"
+  },
+  "userID": "usuario-fixture",
+  "instanceName": "instancia-fixture"
+}
