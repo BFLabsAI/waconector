@@ -21,6 +21,7 @@ import type {
   ConnectionUpdateEvent,
   GroupUpdateEvent,
   MessageAckEvent,
+  MessageDeletedEvent,
   UnknownEvent,
 } from '../../core/events';
 import { HttpClient } from '../../core/http';
@@ -1745,6 +1746,22 @@ function mapMessageEvent(
   }
 
   const fromMe = asBoolean(info.IsFromMe) ?? false;
+  const revoked = extractRevokedMessageId(asRecord(data.Message));
+  if (revoked !== undefined) {
+    // Mensagem apagada (ProtocolMessage REVOKE): evento canônico `message.deleted` (ADR-0023) com
+    // o id da mensagem ALVO (`protocolMessage.key.ID`), não o id do envelope do protocolo.
+    const deleted: MessageDeletedEvent = {
+      type: 'message.deleted',
+      provider: PROVIDER,
+      instanceId,
+      messageId: revoked,
+      chatId: asString(info.Chat) ?? '',
+      fromMe,
+      deletedAt: toEpochMs(info.Timestamp),
+      raw: rawBody,
+    };
+    return deleted;
+  }
   const sender = resolveSender(info, eventRecord);
   const context = extractContext(asRecord(data.Message));
   const content = mapMessageContent(asRecord(data.Message));
@@ -1779,6 +1796,20 @@ function mapMessageEvent(
     message,
     raw: rawBody,
   };
+}
+
+/**
+ * Id da mensagem apagada quando `Message.protocolMessage` é um REVOKE. O protojson omite o `type`
+ * quando é o valor zero (REVOKE = 0), então ausente, `0` e `"REVOKE"` valem; qualquer outro tipo
+ * (ex.: configuração de efêmera, edição) não é exclusão. Sem `key.ID` não há alvo: devolve vazio.
+ */
+function extractRevokedMessageId(message: Record<string, unknown> | undefined): string | undefined {
+  const protocol = asRecord(message?.protocolMessage);
+  if (!protocol) return undefined;
+  const type = protocol.type;
+  if (type !== undefined && type !== 0 && type !== 'REVOKE') return undefined;
+  const key = asRecord(protocol.key);
+  return asString(key?.ID) ?? asString(key?.id);
 }
 
 const PHONE_JID_SUFFIX = '@s.whatsapp.net';
