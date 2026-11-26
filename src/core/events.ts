@@ -40,6 +40,31 @@ export interface MessageAckEvent extends BaseEvent {
   ack: MessageAck;
 }
 
+/**
+ * Mensagem editada por quem a enviou (cliente ou, em coexistência, o celular do negócio).
+ * `message` traz o texto MAIS RECENTE (ADR-0023). Só adapters cujo provider reporta edição emitem.
+ */
+export interface MessageEditedEvent extends BaseEvent {
+  type: 'message.edited';
+  message: WaMessage;
+  /** Versões anteriores do texto, da mais antiga para a mais nova, quando o provider informa. */
+  previousTexts?: string[];
+  /** Epoch em milissegundos da última edição. */
+  editedAt?: number;
+}
+
+/** Mensagem apagada (revogada) por quem a enviou. O conteúdo anterior vai em `message` se o provider o mantém. */
+export interface MessageDeletedEvent extends BaseEvent {
+  type: 'message.deleted';
+  messageId: string;
+  chatId: string;
+  /** `true` quando o próprio número apagou (ex.: pelo celular em coexistência). */
+  fromMe: boolean;
+  /** Epoch em milissegundos. */
+  deletedAt?: number;
+  message?: WaMessage;
+}
+
 export interface ConnectionUpdateEvent extends BaseEvent {
   type: 'connection.update';
   state: InstanceState;
@@ -72,6 +97,8 @@ export type CanonicalEvent =
   | MessageReceivedEvent
   | MessageSentEvent
   | MessageAckEvent
+  | MessageEditedEvent
+  | MessageDeletedEvent
   | ConnectionUpdateEvent
   | GroupUpdateEvent
   | UnknownEvent;

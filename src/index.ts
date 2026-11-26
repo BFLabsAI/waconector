@@ -25,6 +25,8 @@ export type {
   EventOf,
   GroupUpdateEvent,
   MessageAckEvent,
+  MessageDeletedEvent,
+  MessageEditedEvent,
   MessageReceivedEvent,
   MessageSentEvent,
   SentOrigin,
