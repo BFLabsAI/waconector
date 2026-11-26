@@ -184,6 +184,15 @@ export class MockAdapter implements WaAdapter {
           raw: { mock: true, input },
         };
       },
+      sendTemplate: async (input) => {
+        this.assertConnected();
+        return {
+          id: `mock-${++this.seq}`,
+          chatId: input.to,
+          timestamp: Date.now(),
+          raw: { mock: true, input },
+        };
+      },
       download: async (input): Promise<DownloadedMedia> => {
         this.assertConnected();
         return {

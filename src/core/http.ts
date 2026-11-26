@@ -154,7 +154,12 @@ export class HttpClient {
           this.redact(
             `HTTP ${response.status} em ${method} ${options.path}: ${truncate(bodyText, 400)}`,
           ),
-          { provider: this.provider, status: response.status, retryAfterMs },
+          {
+            provider: this.provider,
+            status: response.status,
+            retryAfterMs,
+            body: parseErrorBody(bodyText),
+          },
         );
       }
 
@@ -252,6 +257,19 @@ async function safeText(response: Response): Promise<string> {
   } catch {
     return '';
   }
+}
+
+/** Corpo de erro como JSON quando parseável; senão o texto (nunca lança). */
+function parseErrorBody(text: string): unknown {
+  if (text.length === 0) return undefined;
+  if (looksLikeJson(text)) {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
+  }
+  return text;
 }
 
 function truncate(text: string, max: number): string {

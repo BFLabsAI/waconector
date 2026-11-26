@@ -53,6 +53,7 @@ import type {
   SendMediaInput,
   SendPollInput,
   SendReactionInput,
+  SendTemplateInput,
   SendTextInput,
   SentMessage,
   SetTypingInput,
@@ -108,6 +109,7 @@ export interface ConnectorMessagesApi {
   sendLocation(input: SendLocationInput): Promise<SentMessage>;
   sendContactCard(input: SendContactCardInput): Promise<SentMessage>;
   sendPoll(input: SendPollInput): Promise<SentMessage>;
+  sendTemplate(input: SendTemplateInput): Promise<SentMessage>;
   download(input: DownloadMediaInput): Promise<DownloadedMedia>;
 }
 
@@ -323,6 +325,10 @@ export class WaConnector {
       sendPoll: (input) =>
         this.callMessagesMethod('sendPoll', 'messages.sendPoll', (fn) =>
           fn(this.prepareSendPoll(input)),
+        ),
+      sendTemplate: (input) =>
+        this.callMessagesMethod('sendTemplate', 'messages.sendTemplate', (fn) =>
+          fn(this.prepareSendTemplate(input)),
         ),
       download: (input) =>
         this.callMessagesMethod('download', 'messages.download', (fn) =>
@@ -717,6 +723,29 @@ export class WaConnector {
       throw new WaConnectorError(
         'INVALID_INPUT',
         'messages.sendPoll exige "options" com pelo menos 2 itens.',
+        { provider: this.provider },
+      );
+    }
+    return { ...input, to: normalizeChatId(this.requireTo(input.to)) };
+  }
+
+  private prepareSendTemplate(input: SendTemplateInput): SendTemplateInput {
+    if (typeof input.name !== 'string' || input.name.trim().length === 0) {
+      throw new WaConnectorError('INVALID_INPUT', 'messages.sendTemplate exige "name" não vazio.', {
+        provider: this.provider,
+      });
+    }
+    if (typeof input.language !== 'string' || input.language.trim().length === 0) {
+      throw new WaConnectorError(
+        'INVALID_INPUT',
+        'messages.sendTemplate exige "language" não vazio (ex.: pt_BR).',
+        { provider: this.provider },
+      );
+    }
+    if (input.params !== undefined && !input.params.every((p) => typeof p === 'string')) {
+      throw new WaConnectorError(
+        'INVALID_INPUT',
+        'messages.sendTemplate exige "params" como array de strings.',
         { provider: this.provider },
       );
     }

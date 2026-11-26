@@ -270,6 +270,32 @@ export interface SendPollInput {
 }
 
 /**
+ * Ver ADR-0022. Template de mensagem aprovado (WABA/Meta e provedores que usam a API oficial).
+ * É o único jeito de abrir conversa ou de falar fora da janela de 24 h do WhatsApp.
+ */
+export interface SendTemplateInput {
+  to: string;
+  /** Nome exato do template aprovado (minúsculas, números e `_`). */
+  name: string;
+  /** Código de idioma exato com que o template foi criado (ex.: `pt_BR`; `pt` não é `pt_BR`). */
+  language: string;
+  /**
+   * Variáveis posicionais em UM array plano, na ordem em que aparecem no template: variáveis do
+   * cabeçalho de texto, depois do corpo, depois dos botões de URL dinâmicos.
+   */
+  params?: string[];
+  /** Valores de botões que recebem o dado no envio, endereçados pela posição do botão. */
+  buttonParams?: SendTemplateButtonParam[];
+}
+
+export interface SendTemplateButtonParam {
+  /** Posição do botão (começa em 0) no template aprovado. */
+  index: number;
+  subType: 'url' | 'copy_code' | 'flow';
+  value: string;
+}
+
+/**
  * Ver ADR-0015. Vocabulário canônico do indicador de digitação/gravação por conversa
  * (`presence.setTyping`) — mapeia para o enum nativo do whatsmeow (`composing`/`recording`/
  * `paused`) que a maioria dos providers pesquisados já usa diretamente ou com pequenas variações

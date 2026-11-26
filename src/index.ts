@@ -27,6 +27,7 @@ export type {
   MessageAckEvent,
   MessageReceivedEvent,
   MessageSentEvent,
+  SentOrigin,
   UnknownEvent,
 } from './core/events';
 export type { HttpClientOptions, HttpRequestOptions } from './core/http';
@@ -40,6 +41,8 @@ export type {
   MessageAck,
   MessageKind,
   SendMediaInput,
+  SendTemplateButtonParam,
+  SendTemplateInput,
   SendTextInput,
   SentMessage,
   WaMessage,

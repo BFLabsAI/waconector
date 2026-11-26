@@ -37,6 +37,7 @@ import type {
   SendMediaInput,
   SendPollInput,
   SendReactionInput,
+  SendTemplateInput,
   SendTextInput,
   SentMessage,
   SetTypingInput,
@@ -113,6 +114,8 @@ export interface MessagesApi {
   sendContactCard?(input: SendContactCardInput): Promise<SentMessage>;
   /** Opcional: só implementado por adapters que declaram a capability `messages.sendPoll`. Ver ADR-0014. */
   sendPoll?(input: SendPollInput): Promise<SentMessage>;
+  /** Opcional: só implementado por adapters que declaram a capability `messages.sendTemplate`. Ver ADR-0022. */
+  sendTemplate?(input: SendTemplateInput): Promise<SentMessage>;
   /** Opcional: só implementado por adapters que declaram a capability `messages.download`. Ver ADR-0020. */
   download?(input: DownloadMediaInput): Promise<DownloadedMedia>;
 }

@@ -10,7 +10,12 @@ export type WaErrorCode =
   | 'TIMEOUT'
   | 'NETWORK_ERROR'
   | 'WEBHOOK_PARSE_ERROR'
-  | 'PROVIDER_ERROR';
+  | 'PROVIDER_ERROR'
+  /** Fora da janela de 24 h do WhatsApp: só template aprovado (ver ADR-0022). */
+  | 'WINDOW_CLOSED'
+  | 'TEMPLATE_NOT_FOUND'
+  /** Mídia recebida que o provider/Meta já descartou (retenção vencida). */
+  | 'MEDIA_EXPIRED';
 
 export interface WaConnectorErrorOptions {
   provider?: string;
@@ -22,6 +27,10 @@ export interface WaConnectorErrorOptions {
    * pelo laço de retry no lugar do backoff calculado (ver ADR-0007).
    */
   retryAfterMs?: number;
+  /** Código de erro do provider/plataforma quando identificável (ex.: `131047` da Meta). */
+  providerCode?: string;
+  /** Corpo da resposta de erro do provider (JSON já parseado, ou texto), SEM redação: não logar. */
+  body?: unknown;
 }
 
 export class WaConnectorError extends Error {
@@ -31,6 +40,8 @@ export class WaConnectorError extends Error {
   readonly provider?: string;
   readonly status?: number;
   readonly retryAfterMs?: number;
+  readonly providerCode?: string;
+  readonly body?: unknown;
 
   constructor(code: WaErrorCode, message: string, options: WaConnectorErrorOptions = {}) {
     super(message, options.cause === undefined ? undefined : { cause: options.cause });
@@ -39,6 +50,8 @@ export class WaConnectorError extends Error {
     this.provider = options.provider;
     this.status = options.status;
     this.retryAfterMs = options.retryAfterMs;
+    this.providerCode = options.providerCode;
+    this.body = options.body;
   }
 }
 

@@ -25,6 +25,7 @@ export const CAPABILITIES = [
   'messages.sendLocation',
   'messages.sendContactCard',
   'messages.sendPoll',
+  'messages.sendTemplate',
   'messages.download',
   'groups.create',
   'groups.getInfo',

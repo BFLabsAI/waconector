@@ -18,10 +18,19 @@ export interface MessageReceivedEvent extends BaseEvent {
   message: WaMessage;
 }
 
+/**
+ * Quem originou uma mensagem `fromMe` (ADR-0022): `self` = enviada pelo próprio conector/API do
+ * provider; `external_device` = digitada no celular/app do negócio (eco de coexistência — um
+ * humano falando); `unknown` = o provider não informa.
+ */
+export type SentOrigin = 'self' | 'external_device' | 'unknown';
+
 /** Mensagem enviada pelo próprio número (eco de `fromMe`). */
 export interface MessageSentEvent extends BaseEvent {
   type: 'message.sent';
   message: WaMessage;
+  /** Opcional e aditivo: ausente nos adapters que não distinguem a origem. */
+  origin?: SentOrigin;
 }
 
 export interface MessageAckEvent extends BaseEvent {
