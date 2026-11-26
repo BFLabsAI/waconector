@@ -1,0 +1,23 @@
+{
+  "data": [
+    {
+      "id": "cnv00000000000000000001",
+      "platform": "whatsapp",
+      "accountId": "acc00000000000000000001",
+      "participantId": "15550100001",
+      "participantName": "Cliente Exemplo",
+      "lastMessage": "Claro, o preço é R$ 10",
+      "updatedTime": "2026-01-15T12:01:00Z",
+      "updatedAt": "2026-01-15T12:01:00Z",
+      "status": "active",
+      "unreadCount": 0
+    }
+  ],
+  "pagination": {
+    "hasMore": false,
+    "nextCursor": null
+  },
+  "sync": {
+    "nextUpdatedSince": "2026-01-15T12:01:00Z"
+  }
+}

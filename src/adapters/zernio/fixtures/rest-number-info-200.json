@@ -1,0 +1,19 @@
+{
+  "phone": {
+    "display_phone_number": "+1 555 010-0000",
+    "verified_name": "Empresa Exemplo",
+    "name_status": "APPROVED",
+    "quality_rating": "GREEN",
+    "messaging_limit_tier": "TIER_1K",
+    "throughput": {
+      "level": "STANDARD"
+    },
+    "status": "CONNECTED",
+    "is_official_business_account": false,
+    "platform_type": "CLOUD_API"
+  },
+  "waba": {
+    "name": "WABA Exemplo",
+    "business_verification_status": "verified"
+  }
+}

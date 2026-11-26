@@ -1,0 +1,48 @@
+{
+  "id": "evt-0004",
+  "event": "message.received",
+  "message": {
+    "id": "msg00000000000000000001",
+    "conversationId": "cnv00000000000000000001",
+    "platform": "whatsapp",
+    "platformMessageId": "wamid.FIXTURE0005",
+    "direction": "incoming",
+    "text": "Sim",
+    "attachments": [],
+    "sender": {
+      "id": "15550100001",
+      "name": "Cliente Exemplo",
+      "phoneNumber": "+15550100001"
+    },
+    "sentAt": "2026-01-15T12:00:00Z",
+    "isRead": false,
+    "sentVia": null
+  },
+  "conversation": {
+    "id": "cnv00000000000000000001",
+    "platformConversationId": "15550100001",
+    "participantId": "15550100001",
+    "participantName": "Cliente Exemplo",
+    "status": "active"
+  },
+  "account": {
+    "id": "acc00000000000000000001",
+    "accountId": "acc00000000000000000001",
+    "profileId": "prf00000000000000000001",
+    "platform": "whatsapp",
+    "username": "+1 555 010-0000",
+    "displayName": "Empresa Exemplo"
+  },
+  "metadata": {
+    "interactiveType": "button_reply",
+    "interactiveId": "btn_sim",
+    "quotedMessageId": "wamid.FIXTURE0002"
+  },
+  "profiles": [
+    {
+      "id": "prf00000000000000000001",
+      "externalId": "tenant-exemplo"
+    }
+  ],
+  "timestamp": "2026-01-15T12:00:01Z"
+}

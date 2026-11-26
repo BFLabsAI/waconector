@@ -1,0 +1,38 @@
+{
+  "id": "evt-0013",
+  "event": "reaction.received",
+  "reaction": {
+    "emoji": "👍",
+    "action": "added",
+    "messageId": "msg00000000000000000002",
+    "platformMessageId": "wamid.FIXTURE0002",
+    "sender": {
+      "id": "15550100001",
+      "name": "Cliente Exemplo",
+      "phoneNumber": "+15550100001"
+    },
+    "reactedAt": "2026-01-15T12:02:00Z"
+  },
+  "conversation": {
+    "id": "cnv00000000000000000001",
+    "platformConversationId": "15550100001",
+    "participantId": "15550100001",
+    "participantName": "Cliente Exemplo",
+    "status": "active"
+  },
+  "account": {
+    "id": "acc00000000000000000001",
+    "accountId": "acc00000000000000000001",
+    "profileId": "prf00000000000000000001",
+    "platform": "whatsapp",
+    "username": "+1 555 010-0000",
+    "displayName": "Empresa Exemplo"
+  },
+  "profiles": [
+    {
+      "id": "prf00000000000000000001",
+      "externalId": "tenant-exemplo"
+    }
+  ],
+  "timestamp": "2026-01-15T12:00:01Z"
+}

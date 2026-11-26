@@ -89,6 +89,16 @@
         "default": "./dist/adapters/zapi/index.cjs"
       }
     },
+    "./zernio": {
+      "import": {
+        "types": "./dist/adapters/zernio/index.d.ts",
+        "default": "./dist/adapters/zernio/index.js"
+      },
+      "require": {
+        "types": "./dist/adapters/zernio/index.d.cts",
+        "default": "./dist/adapters/zernio/index.cjs"
+      }
+    },
     "./wuzapi": {
       "import": {
         "types": "./dist/adapters/wuzapi/index.d.ts",

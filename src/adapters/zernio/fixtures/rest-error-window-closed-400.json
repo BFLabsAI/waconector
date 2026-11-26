@@ -1,0 +1,10 @@
+{
+  "error": "Re-engagement message",
+  "type": "platform_error",
+  "code": "platform_api_error",
+  "platform": "meta",
+  "platformError": {
+    "code": 131047,
+    "type": "OAuthException"
+  }
+}

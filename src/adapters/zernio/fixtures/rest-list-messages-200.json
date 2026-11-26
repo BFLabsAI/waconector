@@ -1,0 +1,39 @@
+{
+  "status": "ok",
+  "pagination": {
+    "hasMore": false,
+    "nextCursor": null
+  },
+  "sortOrderApplied": "desc",
+  "messages": [
+    {
+      "id": "wamid.FIXTURE0002",
+      "conversationId": "cnv00000000000000000001",
+      "accountId": "acc00000000000000000001",
+      "platform": "whatsapp",
+      "message": "Claro, o preço é R$ 10",
+      "senderId": "acc00000000000000000001",
+      "direction": "outgoing",
+      "createdAt": "2026-01-15T12:01:00Z",
+      "attachments": [],
+      "deliveryStatus": "read",
+      "deliveredAt": "2026-01-15T12:01:02Z",
+      "readAt": "2026-01-15T12:01:30Z",
+      "sentAt": "2026-01-15T12:01:00Z",
+      "sentVia": "api",
+      "metadata": {}
+    },
+    {
+      "id": "wamid.FIXTURE0001",
+      "conversationId": "cnv00000000000000000001",
+      "accountId": "acc00000000000000000001",
+      "platform": "whatsapp",
+      "message": "Olá, quero saber o preço",
+      "senderId": "15550100001",
+      "direction": "incoming",
+      "createdAt": "2026-01-15T12:00:00Z",
+      "attachments": [],
+      "sentVia": null
+    }
+  ]
+}

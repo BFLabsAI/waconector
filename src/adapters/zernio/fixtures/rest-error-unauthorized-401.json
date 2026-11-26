@@ -1,0 +1,5 @@
+{
+  "error": "Invalid API key",
+  "type": "authentication_error",
+  "code": "invalid_credentials"
+}

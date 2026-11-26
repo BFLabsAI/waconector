@@ -9,6 +9,7 @@ export default defineConfig([
       'adapters/evolution/index': 'src/adapters/evolution/index.ts',
       'adapters/uazapi/index': 'src/adapters/uazapi/index.ts',
       'adapters/zapi/index': 'src/adapters/zapi/index.ts',
+      'adapters/zernio/index': 'src/adapters/zernio/index.ts',
       'adapters/wuzapi/index': 'src/adapters/wuzapi/index.ts',
       'adapters/whapi/index': 'src/adapters/whapi/index.ts',
       'adapters/quepasa/index': 'src/adapters/quepasa/index.ts',

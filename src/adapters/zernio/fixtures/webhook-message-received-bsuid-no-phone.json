@@ -1,0 +1,46 @@
+{
+  "id": "evt-0005",
+  "event": "message.received",
+  "message": {
+    "id": "msg00000000000000000001",
+    "conversationId": "cnv00000000000000000001",
+    "platform": "whatsapp",
+    "platformMessageId": "wamid.FIXTURE0006",
+    "direction": "incoming",
+    "text": "oi",
+    "attachments": [],
+    "sender": {
+      "id": "BR.FIXTUREBSUID0001",
+      "name": "Cliente Exemplo",
+      "phoneNumber": null,
+      "businessScopedUserId": "BR.FIXTUREBSUID0001",
+      "whatsappUsername": "cliente.exemplo"
+    },
+    "sentAt": "2026-01-15T12:00:00Z",
+    "isRead": false,
+    "sentVia": null
+  },
+  "conversation": {
+    "id": "cnv00000000000000000002",
+    "platformConversationId": "BR.FIXTUREBSUID0001",
+    "participantId": "BR.FIXTUREBSUID0001",
+    "participantName": "Cliente Exemplo",
+    "status": "active"
+  },
+  "account": {
+    "id": "acc00000000000000000001",
+    "accountId": "acc00000000000000000001",
+    "profileId": "prf00000000000000000001",
+    "platform": "whatsapp",
+    "username": "+1 555 010-0000",
+    "displayName": "Empresa Exemplo"
+  },
+  "metadata": null,
+  "profiles": [
+    {
+      "id": "prf00000000000000000001",
+      "externalId": "tenant-exemplo"
+    }
+  ],
+  "timestamp": "2026-01-15T12:00:01Z"
+}

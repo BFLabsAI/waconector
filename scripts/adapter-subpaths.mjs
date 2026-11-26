@@ -24,6 +24,11 @@ export const ADAPTER_SUBPATHS = [
     options: { baseUrl: 'http://localhost:1', instanceId: 'x', token: 'x' },
   },
   { name: 'wuzapi', factory: 'wuzapi', options: { baseUrl: 'http://localhost:1', token: 'x' } },
+  {
+    name: 'zernio',
+    factory: 'zernio',
+    options: { baseUrl: 'http://localhost:1', apiKey: 'x', accountId: 'x' },
+  },
   { name: 'whapi', factory: 'whapi', options: { baseUrl: 'http://localhost:1', token: 'x' } },
   { name: 'quepasa', factory: 'quepasa', options: { baseUrl: 'http://localhost:1', token: 'x' } },
   {

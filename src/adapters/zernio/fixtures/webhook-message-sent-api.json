@@ -1,0 +1,59 @@
+{
+  "id": "evt-0007",
+  "event": "message.sent",
+  "message": {
+    "id": "msg00000000000000000002",
+    "conversationId": "cnv00000000000000000001",
+    "platform": "whatsapp",
+    "platformMessageId": "wamid.FIXTURE0002",
+    "direction": "outgoing",
+    "text": "Claro, o preço é R$ 10",
+    "attachments": [],
+    "sender": {
+      "id": "acc00000000000000000001",
+      "name": "Empresa Exemplo"
+    },
+    "sentAt": "2026-01-15T12:01:00Z",
+    "isRead": false,
+    "sentVia": "api",
+    "automationId": null,
+    "workflowId": null,
+    "executionId": null,
+    "broadcastId": null,
+    "sequenceId": null
+  },
+  "source": "cloud_api",
+  "pricing": {
+    "billable": true,
+    "pricingModel": "PMP",
+    "category": "service",
+    "type": "free_customer_service"
+  },
+  "billingConversation": {
+    "id": "bill-fixture-1",
+    "expiresAt": "2026-01-16T12:01:00Z",
+    "originType": "service"
+  },
+  "conversation": {
+    "id": "cnv00000000000000000001",
+    "platformConversationId": "15550100001",
+    "participantId": "15550100001",
+    "participantName": "Cliente Exemplo",
+    "status": "active"
+  },
+  "account": {
+    "id": "acc00000000000000000001",
+    "accountId": "acc00000000000000000001",
+    "profileId": "prf00000000000000000001",
+    "platform": "whatsapp",
+    "username": "+1 555 010-0000",
+    "displayName": "Empresa Exemplo"
+  },
+  "profiles": [
+    {
+      "id": "prf00000000000000000001",
+      "externalId": "tenant-exemplo"
+    }
+  ],
+  "timestamp": "2026-01-15T12:00:01Z"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "evt-0099",
+  "event": "some.future.event",
+  "foo": "bar",
+  "profiles": [
+    {
+      "id": "prf00000000000000000001",
+      "externalId": "tenant-exemplo"
+    }
+  ],
+  "timestamp": "2026-01-15T12:00:01Z"
+}

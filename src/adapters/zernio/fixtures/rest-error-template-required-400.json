@@ -1,0 +1,5 @@
+{
+  "error": "A template is required to start a conversation",
+  "type": "invalid_request_error",
+  "code": "TEMPLATE_REQUIRED"
+}
