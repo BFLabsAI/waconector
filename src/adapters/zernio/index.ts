@@ -86,10 +86,12 @@ export interface ZernioEventDedupe {
 
 export interface ZernioHistoryFilter {
   /**
-   * Idade máxima (ms) de `sentAt` para uma mensagem virar evento de conversa. Mais velha vira
-   * `unknown` (`reason: "history_sync"`). Padrão: 2 horas. `0` desliga o filtro por idade.
-   * Webhooks ao vivo chegam em segundos; retries do Zernio podem atrasar até ~51 h — se o gateway
-   * quiser processar mensagens atrasadas legítimas, aumente.
+   * OPCIONAL: idade máxima (ms) de `sentAt` para uma mensagem virar evento de conversa. Mais
+   * velha vira `unknown` (`reason: "history_sync"`). Padrão: `0` (desligado), porque retries do
+   * Zernio atrasam entregas legítimas por até ~51 h e perdê-las é pior que o risco coberto. O
+   * filtro padrão é só por `source`. ATENÇÃO: o valor real de `metadata.source` do histórico
+   * sincronizado ainda NÃO foi confirmado em número real (o dossiê assume `coexistence_history`,
+   * visto na doc da leitura REST); se o `source` não bastar, ligue esta idade (ex.: 2 h).
    */
   maxAgeMs?: number;
   /** Valores de `metadata.source` tratados como histórico sincronizado. Padrão: `['coexistence_history']`. */
@@ -162,7 +164,7 @@ const ZERNIO_CAPABILITIES: CapabilitySet = [
   'webhooks.parse',
 ];
 
-const DEFAULT_HISTORY_MAX_AGE_MS = 2 * 60 * 60 * 1000;
+const DEFAULT_HISTORY_MAX_AGE_MS = 0;
 const DEDUPE_TTL_MS = 72 * 60 * 60 * 1000;
 const DEDUPE_MAX_ENTRIES = 50_000;
 /** Limite do `POST /v1/media/upload-direct` na prática (doc: ~4,5 MB). */
@@ -1054,6 +1056,47 @@ function mapEvent(eventName: string, body: Record<string, unknown>, ctx: Ctx): C
               raw: body,
             }
           : { type: 'message.received', provider: PROVIDER, instanceId, message, raw: body },
+      ];
+    }
+    case 'message.edited': {
+      const raw = asRecord(body.message);
+      if (!raw || !chatId)
+        return [unknownEvent(body, 'message.edited sem message/conversation', instanceId)];
+      const fromMe = asString(raw.direction) === 'outgoing';
+      const history = asArray(body.editHistory)
+        .map((entry) => asString(asRecord(entry)?.text))
+        .filter((text): text is string => text !== undefined);
+      return [
+        {
+          type: 'message.edited',
+          provider: PROVIDER,
+          instanceId,
+          message: mapMessage(raw, body, chatId, fromMe),
+          previousTexts: history,
+          editedAt: Date.parse(asString(body.editedAt) ?? '') || undefined,
+          raw: body,
+        },
+      ];
+    }
+    case 'message.deleted': {
+      const raw = asRecord(body.message);
+      const messageId = asString(raw?.platformMessageId);
+      if (!raw || !messageId || !chatId) {
+        return [unknownEvent(body, 'message.deleted sem message/conversation', instanceId)];
+      }
+      const fromMe = asString(raw.direction) === 'outgoing';
+      return [
+        {
+          type: 'message.deleted',
+          provider: PROVIDER,
+          instanceId,
+          messageId,
+          chatId,
+          fromMe,
+          deletedAt: Date.parse(asString(body.deletedAt) ?? '') || undefined,
+          message: mapMessage(raw, body, chatId, fromMe),
+          raw: body,
+        },
       ];
     }
     case 'account.connected':

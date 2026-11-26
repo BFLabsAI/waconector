@@ -162,8 +162,6 @@ describe('zernio: webhooks → eventos canônicos', () => {
 
   it('eventos sem equivalente canônico viram unknown com reason e raw', () => {
     for (const [name, reason] of [
-      ['webhook-message-edited.json', 'message.edited'],
-      ['webhook-message-deleted.json', 'message.deleted'],
       ['webhook-conversation-started.json', 'conversation.started'],
       ['webhook-conversation-control-changed.json', 'conversation.control_changed'],
       ['webhook-webhook-test.json', 'webhook.test'],
@@ -173,6 +171,23 @@ describe('zernio: webhooks → eventos canônicos', () => {
       expect(event?.type).toBe('unknown');
       if (event?.type === 'unknown') expect(event.reason).toBe(reason);
     }
+  });
+
+  it('mensagem editada e apagada viram eventos canônicos', () => {
+    const [edited] = parse('webhook-message-edited.json');
+    if (edited?.type !== 'message.edited') throw new Error('esperava message.edited');
+    expect(edited.message.text).toBe('texto corrigido');
+    expect(edited.message.fromMe).toBe(false);
+    expect(edited.previousTexts).toEqual(['texto errado']);
+    expect(edited.editedAt).toBe(Date.parse('2026-01-15T12:00:30Z'));
+    const [deleted] = parse('webhook-message-deleted.json');
+    if (deleted?.type !== 'message.deleted') throw new Error('esperava message.deleted');
+    expect(deleted).toMatchObject({
+      messageId: 'wamid.FIXTURE0001',
+      chatId: CHAT_ID,
+      fromMe: false,
+    });
+    expect(deleted.message?.text).toBe('apaguei isso');
   });
 
   it('payload malformado nunca lança', () => {
@@ -271,7 +286,7 @@ describe('zernio: dedupe e filtro de histórico', () => {
   });
 
   it('mensagem antiga (histórico sincronizado) não vira message.received', () => {
-    const { wa } = make({ history: {} }); // padrão: 2 h; as fixtures são de janeiro
+    const { wa } = make({ history: { maxAgeMs: 2 * 60 * 60 * 1000 } }); // opt-in; fixtures de janeiro
     const [event] = wa.webhooks.parse({ body: fixture('webhook-message-received-text.json') });
     expect(event?.type === 'unknown' && event.reason).toBe('history_sync');
     const echo = wa.webhooks.parse({
@@ -280,7 +295,14 @@ describe('zernio: dedupe e filtro de histórico', () => {
     expect(echo?.type === 'unknown' && echo.reason).toBe('history_sync');
   });
 
-  it('mensagem recente passa; metadata.source coexistence_history é filtrada mesmo recente', () => {
+  it('por padrão (só source) mensagem antiga NÃO é descartada por idade', () => {
+    const { wa } = make({ history: {} });
+    expect(
+      wa.webhooks.parse({ body: fixture('webhook-message-received-text.json') })[0]?.type,
+    ).toBe('message.received');
+  });
+
+  it('metadata.source coexistence_history é filtrada; recente passa', () => {
     const recent = fixture<{ message: { sentAt: string }; metadata: unknown }>(
       'webhook-message-received-text.json',
     );

@@ -5,6 +5,9 @@
 - Versão testada: somente leitura de documentação e OpenAPI em 2026-11-26. **Nenhuma chamada real de mensageria foi feita**: os payloads são montados do schema da doc (fixtures sintéticas em `src/adapters/zernio/fixtures/`); itens [inferência] precisam de teste com número real.
 - Hospedagem: SaaS multi-tenant. O Zernio é um BSP/gateway sobre a **Cloud API da Meta**: o número fica registrado na WABA do cliente e o Zernio fala com a Meta em nome dele. Não existe sessão pareada tipo WhatsApp Web.
 
+
+> **Atualização (decisão do CEO, 2026-11-26)**: o filtro de histórico do adapter é, por padrão, só por `metadata.source` (`maxAgeMs: 0`, idade desligada e opcional). O valor real de `metadata.source` do histórico sincronizado **precisa ser confirmado no teste real** (a doc só cita `coexistence_history` na leitura REST). `message.edited` e `message.deleted` agora são eventos canônicos (ADR-0023).
+
 ## Legenda de confiança
 
 Cada afirmação importante carrega uma etiqueta:
