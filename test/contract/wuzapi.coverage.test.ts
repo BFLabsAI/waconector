@@ -145,13 +145,14 @@ describe('wuzapi: capabilities do fork BF (chats, labels, channels, download, me
       text: 'oi @5511900000000',
       mentions: ['5511900000000', '5511911111111@s.whatsapp.net'],
       quotedId: 'ORIG',
+      quotedParticipant: '5511911111111@s.whatsapp.net',
     });
     expect(calls[0]?.body).toEqual({
       Phone: '120363000000000000@g.us',
       Body: 'oi @5511900000000',
       ContextInfo: {
         StanzaID: 'ORIG',
-        Participant: '120363000000000000@g.us',
+        Participant: '5511911111111@s.whatsapp.net',
         MentionedJID: ['5511900000000@s.whatsapp.net', '5511911111111@s.whatsapp.net'],
       },
     });

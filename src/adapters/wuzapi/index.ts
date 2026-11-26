@@ -464,16 +464,29 @@ function mapInstanceState(data: Record<string, unknown> | undefined): InstanceSt
 // messages.*
 // ---------------------------------------------------------------------------
 
+/**
+ * `ContextInfo` de citação. A wuzapi exige `StanzaID` e `Participant` juntos (400 "missing
+ * Participant in ContextInfo" caso contrário). O `Participant` é o AUTOR da mensagem citada:
+ * `quotedParticipant` quando informado; senão, só em conversa 1:1 (chat que não é `@g.us`) o
+ * próprio chat é o autor. Em grupo sem autor não há como saber quem escreveu, e inventar um
+ * participante cita a pessoa errada — nesse caso a mensagem sai SEM citação (nunca falha).
+ */
+function quoteContext(
+  quotedId: string | undefined,
+  quotedParticipant: string | undefined,
+  chat: string,
+): { StanzaID: string; Participant: string } | undefined {
+  if (!quotedId) return undefined;
+  const participant = quotedParticipant ?? (chat.endsWith('@g.us') ? undefined : chat);
+  if (!participant) return undefined;
+  return { StanzaID: quotedId, Participant: participant };
+}
+
 async function sendText(http: HttpClient, input: SendTextInput): Promise<SentMessage> {
   const phone = toWuzapiPhone(input.to);
   const body: Record<string, unknown> = { Phone: phone, Body: input.text };
   const contextInfo: Record<string, unknown> = {};
-  if (input.quotedId) {
-    // ContextInfo exige StanzaID e Participant juntos; SendTextInput não carrega o remetente da
-    // mensagem citada — suposição documentada em docs/providers/wuzapi.md (Participant = Phone).
-    contextInfo.StanzaID = input.quotedId;
-    contextInfo.Participant = phone;
-  }
+  Object.assign(contextInfo, quoteContext(input.quotedId, input.quotedParticipant, phone));
   if (input.mentions && input.mentions.length > 0) {
     // `ContextInfo.MentionedJID` (handlers.go, SendMessage). O servidor também detecta tokens
     // `@<telefone>` no corpo sozinho; o campo explícito cobre menções sem o token no texto.
@@ -507,9 +520,8 @@ async function sendMedia(http: HttpClient, input: SendMediaInput): Promise<SentM
     }
     body.FileName = input.media.filename;
   }
-  if (input.quotedId) {
-    body.ContextInfo = { StanzaID: input.quotedId, Participant: phone };
-  }
+  const quote = quoteContext(input.quotedId, input.quotedParticipant, phone);
+  if (quote) body.ContextInfo = quote;
 
   const response = await http.request<WuzapiEnvelope>({
     method: 'POST',

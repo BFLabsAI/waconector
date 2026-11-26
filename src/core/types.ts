@@ -157,6 +157,12 @@ export interface SendTextInput {
   to: string;
   text: string;
   quotedId?: string;
+  /**
+   * Autor (JID de telefone ou `@lid`) da mensagem citada por `quotedId`. Providers que exigem o
+   * autor para citar (wuzapi: `ContextInfo.Participant`) o usam; em conversa 1:1 o adapter pode
+   * assumir o próprio chat quando ausente, mas em grupo ele é necessário. Aditivo e opcional.
+   */
+  quotedParticipant?: string;
   mentions?: string[];
 }
 
@@ -165,6 +171,8 @@ export interface SendMediaInput {
   media: MediaRef;
   caption?: string;
   quotedId?: string;
+  /** Autor da mensagem citada por `quotedId`; ver `SendTextInput.quotedParticipant`. */
+  quotedParticipant?: string;
 }
 
 export interface SendReactionInput {
