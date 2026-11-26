@@ -1,0 +1,45 @@
+{
+  "type": "Message",
+  "event": {
+    "Info": {
+      "Chat": "5511900000022@s.whatsapp.net",
+      "Sender": "5511900000022@s.whatsapp.net",
+      "IsFromMe": false,
+      "IsGroup": false,
+      "AddressingMode": "pn",
+      "SenderAlt": "",
+      "RecipientAlt": "",
+      "BroadcastListOwner": "",
+      "BroadcastRecipients": null,
+      "ID": "FIXT-AUDIO-0001",
+      "ServerID": 0,
+      "Type": "media",
+      "PushName": "Fulano Teste",
+      "Timestamp": "2026-11-05T12:00:00-03:00",
+      "Category": "",
+      "Multicast": false,
+      "MediaType": "ptt",
+      "VerifiedName": null,
+      "Edit": "",
+      "DeviceSentMeta": null
+    },
+    "Message": {
+      "audioMessage": {
+        "mimetype": "audio/ogg; codecs=opus",
+        "PTT": true,
+        "seconds": 4,
+        "fileLength": 9100
+      }
+    }
+  },
+  "s3": {
+    "url": "https://s3.exemplo.invalid/midia/FIXT-AUDIO-0001.ogg?X-Amz-Signature=sintetica&X-Amz-Expires=3600",
+    "key": "usuario-fixture/FIXT-AUDIO-0001.ogg",
+    "bucket": "bucket-fixture",
+    "size": 9100,
+    "mimeType": "audio/ogg",
+    "fileName": "FIXT-AUDIO-0001.ogg"
+  },
+  "userID": "usuario-fixture",
+  "instanceName": "instancia-fixture"
+}

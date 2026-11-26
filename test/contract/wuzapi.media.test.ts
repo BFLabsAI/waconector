@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createConnector } from '../../src';
 import { wuzapi } from '../../src/adapters/wuzapi';
+import pttFixture from '../../src/adapters/wuzapi/fixtures/webhook-message-audio-ptt.json';
 import audioS3Fixture from '../../src/adapters/wuzapi/fixtures/webhook-message-audio-s3.json';
 import imageS3Fixture from '../../src/adapters/wuzapi/fixtures/webhook-message-image-s3.json';
 
@@ -76,5 +77,22 @@ describe('wuzapi: mídia recebida via bloco s3 do webhook', () => {
     const { userID, instanceName, ...event } = imageS3Fixture;
     const message = firstMessage({ jsonData: JSON.stringify(event), userID, instanceName });
     expect(message.media?.url).toBe(imageS3Fixture.s3.url);
+  });
+});
+
+describe('wuzapi: nota de voz (audioMessage.PTT)', () => {
+  it('PTT=true marca media.voice=true, mantendo kind "audio"', () => {
+    const message = firstMessage(pttFixture);
+    expect(message.kind).toBe('audio');
+    expect(message.media?.kind).toBe('audio');
+    expect(message.media?.voice).toBe(true);
+  });
+
+  it('áudio comum (sem PTT) fica com media.voice=false', () => {
+    const body = structuredClone(pttFixture) as {
+      event: { Message: { audioMessage: Record<string, unknown> } };
+    };
+    body.event.Message.audioMessage.PTT = undefined;
+    expect(firstMessage(body).media?.voice).toBe(false);
   });
 });

@@ -1935,7 +1935,10 @@ function mapMessageContent(message: Record<string, unknown> | undefined): Messag
   }
   const audio = asRecord(message.audioMessage);
   if (audio) {
-    return { kind: 'audio', media: buildMediaRef('audio', audio) };
+    // `audioMessage.PTT` (protojson: maiúsculo) marca nota de voz; ausente = áudio comum.
+    const voice = asBoolean(audio.PTT) ?? asBoolean(audio.ptt) ?? false;
+    const media = buildMediaRef('audio', audio);
+    return { kind: 'audio', media: media ? { ...media, voice } : media };
   }
   const document = asRecord(message.documentMessage);
   if (document) {
@@ -2024,6 +2027,7 @@ function attachRootMedia(
     filename: asString(s3?.fileName) ?? base?.filename ?? asString(eventRecord.fileName),
     size: asNumberLike(s3?.size) ?? base?.size,
     id: asString(s3?.key),
+    voice: base?.voice,
   };
 }
 
