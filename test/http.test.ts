@@ -275,3 +275,28 @@ describe('HttpClient: retry idempotente (ADR-0007)', () => {
     expect(calls).toHaveLength(2);
   });
 });
+
+describe('HttpClient: redirect', () => {
+  it('por padrao NAO segue redirect (manual): 3xx vira erro HTTP e o Location nao e seguido', async () => {
+    const calls: RecordedCall[] = [];
+    const client = new HttpClient({
+      baseUrl: 'https://api.exemplo.com',
+      retries: 0,
+      fetch: fetchStub([() => new Response('', { status: 302, headers: { location: 'http://169.254.169.254/latest' } })], calls),
+    });
+    await expect(client.request({ path: '/x' })).rejects.toSatisfy((e) => isWaConnectorError(e));
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.init?.redirect).toBe('manual');
+  });
+
+  it('redirect configuravel ("follow") e repassado ao fetch', async () => {
+    const calls: RecordedCall[] = [];
+    const client = new HttpClient({
+      baseUrl: 'https://api.exemplo.com',
+      redirect: 'follow',
+      fetch: fetchStub([() => jsonResponse(200, { ok: true })], calls),
+    });
+    await client.request({ path: '/x' });
+    expect(calls[0]?.init?.redirect).toBe('follow');
+  });
+});

@@ -30,6 +30,12 @@ export interface HttpClientOptions {
   provider?: string;
   /** Injetável para testes. */
   fetch?: typeof globalThis.fetch;
+  /**
+   * Política de redirect do fetch (padrão `'manual'`). Seguir redirect por padrão deixaria uma `baseUrl` pública responder
+   * 302 para a rede interna (SSRF, metadados de nuvem) e devolver parte do corpo no erro. Com `'manual'` a resposta 3xx
+   * vira erro HTTP normal (sem seguir o `Location`); `'follow'` só para quem sabe o que faz.
+   */
+  redirect?: 'follow' | 'manual' | 'error';
 }
 
 export interface HttpRequestOptions {
@@ -74,6 +80,7 @@ export class HttpClient {
   private readonly secrets: readonly string[];
   private readonly provider?: string;
   private readonly fetchImpl: typeof globalThis.fetch;
+  private readonly redirect: 'follow' | 'manual' | 'error';
 
   constructor(options: HttpClientOptions) {
     this.baseUrl = stripTrailingSlashes(options.baseUrl);
@@ -83,6 +90,7 @@ export class HttpClient {
     this.secrets = options.secrets ?? [];
     this.provider = options.provider;
     this.fetchImpl = options.fetch ?? globalThis.fetch;
+    this.redirect = options.redirect ?? 'manual';
   }
 
   async request<T = unknown>(options: HttpRequestOptions): Promise<T> {
@@ -139,6 +147,7 @@ export class HttpClient {
         },
         body: hasJsonBody ? JSON.stringify(options.body) : undefined,
         signal: controller.signal,
+        redirect: this.redirect,
       });
 
       if (!response.ok) {
