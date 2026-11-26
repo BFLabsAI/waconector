@@ -37,6 +37,7 @@ import type {
   GroupInfo,
   GroupInviteLink,
   GroupParticipantsInput,
+  InstanceSelf,
   JoinGroupInviteInput,
   LabelChatInput,
   LabelInfo,
@@ -233,11 +234,16 @@ export interface ConnectorCallsApi {
  * Camada de ergonomia e política sobre um adapter: checagem de capabilities,
  * validação e normalização de entrada, eventos e parsing seguro de webhooks.
  */
+/** `instance` do conector: `getSelf` é garantido (lança `UnsupportedCapabilityError` se não suportado). */
+export interface ConnectorInstanceApi extends InstanceApi {
+  getSelf(): Promise<InstanceSelf>;
+}
+
 export class WaConnector {
   readonly adapter: WaAdapter;
   readonly provider: string;
   readonly capabilities: CapabilitySet;
-  readonly instance: InstanceApi;
+  readonly instance: ConnectorInstanceApi;
   readonly messages: ConnectorMessagesApi;
   readonly groups: ConnectorGroupsApi;
   readonly contacts: ConnectorContactsApi;
@@ -268,6 +274,19 @@ export class WaConnector {
       logout: async () => {
         this.assertCapability('instance.logout');
         return adapter.instance.logout();
+      },
+      getSelf: async () => {
+        this.assertCapability('instance.getSelf');
+        const fn = adapter.instance.getSelf;
+        if (!fn) {
+          throw new WaConnectorError(
+            'PROVIDER_ERROR',
+            `Adapter "${this.provider}" declara a capability "instance.getSelf" mas não implementa ` +
+              'instance.getSelf — isso é um bug no adapter, não uma entrada inválida.',
+            { provider: this.provider },
+          );
+        }
+        return fn.call(adapter.instance);
       },
     };
 

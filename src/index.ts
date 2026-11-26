@@ -36,6 +36,7 @@ export type { HttpClientOptions, HttpRequestOptions } from './core/http';
 export { HttpClient } from './core/http';
 export type {
   ConnectResult,
+  InstanceSelf,
   InstanceState,
   InstanceStatus,
   MediaKind,

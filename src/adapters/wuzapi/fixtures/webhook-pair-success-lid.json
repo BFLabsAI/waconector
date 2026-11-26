@@ -1,0 +1,11 @@
+{
+  "type": "PairSuccess",
+  "userID": "usuario-fixture",
+  "instanceName": "instancia-fixture",
+  "event": {
+    "ID": "5511900000099:12@s.whatsapp.net",
+    "LID": "100000000000099:12@lid",
+    "BusinessName": "",
+    "Platform": "smba"
+  }
+}

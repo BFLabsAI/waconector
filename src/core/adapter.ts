@@ -21,6 +21,7 @@ import type {
   GroupInfo,
   GroupInviteLink,
   GroupParticipantsInput,
+  InstanceSelf,
   InstanceStatus,
   JoinGroupInviteInput,
   LabelChatInput,
@@ -82,6 +83,8 @@ export interface InstanceApi {
   connect(): Promise<ConnectResult>;
   status(): Promise<InstanceStatus>;
   logout(): Promise<void>;
+  /** Opcional: só implementado por adapters que declaram a capability `instance.getSelf`. */
+  getSelf?(): Promise<InstanceSelf>;
 }
 
 export interface MessagesApi {

@@ -15,7 +15,7 @@ import type {
 } from '../../core/adapter';
 import type { CapabilitySet } from '../../core/capabilities';
 import { extractInviteCode, normalizeInviteLink } from '../../core/chat-id';
-import { WaConnectorError } from '../../core/errors';
+import { isWaConnectorError, WaConnectorError } from '../../core/errors';
 import type {
   CanonicalEvent,
   ConnectionUpdateEvent,
@@ -41,6 +41,7 @@ import type {
   GroupInviteLink,
   GroupParticipant,
   GroupParticipantsInput,
+  InstanceSelf,
   InstanceState,
   InstanceStatus,
   JoinGroupInviteInput,
@@ -126,6 +127,7 @@ const WUZAPI_CAPABILITIES: CapabilitySet = [
   'instance.connect',
   'instance.status',
   'instance.logout',
+  'instance.getSelf',
   'messages.sendText',
   'messages.sendMedia',
   'messages.sendReaction',
@@ -201,6 +203,7 @@ export function wuzapi(options: WuzapiOptions): WaAdapter {
     connect: () => connectInstance(http, options),
     status: () => statusInstance(http),
     logout: () => logoutInstance(http),
+    getSelf: () => getSelfInstance(http),
   };
 
   const messages: MessagesApi = {
@@ -434,6 +437,39 @@ async function statusInstance(http: HttpClient): Promise<InstanceStatus> {
   const response = await http.request<WuzapiEnvelope>({ method: 'GET', path: '/session/status' });
   const data = asRecord(response.data);
   return { state: mapInstanceState(data), raw: response };
+}
+
+/**
+ * Identidade da própria instância. `GET /session/status` -> `data.jid` (`5511...:12@s.whatsapp.net`,
+ * com aparelho) dá o telefone; `GET /user/lid/{dígitos}` (`GetUserLID`, `handlers.go`) devolve
+ * `{jid, lid}` a partir do mapeamento PN->LID do store do whatsmeow. Instância sem `jid` (não
+ * pareada/desconectada) volta só com `raw`; `404` no LID (mapeamento ainda não conhecido) deixa
+ * `lid` indefinido; qualquer outro erro HTTP propaga. A resposta de `/session/status` traz o
+ * token e a URL de proxy da instância, por isso `raw` só leva `jid`/`name` e o par `{jid, lid}`.
+ */
+async function getSelfInstance(http: HttpClient): Promise<InstanceSelf> {
+  const status = await http.request<WuzapiEnvelope>({ method: 'GET', path: '/session/status' });
+  const data = asRecord(status.data);
+  const rawJid = asString(data?.jid);
+  const name = asString(data?.name) || undefined;
+  if (!rawJid) return { name, raw: { status: { jid: rawJid, name } } };
+  const jid = stripDevice(rawJid);
+  const phone = jid.split('@')[0] ?? '';
+  let lid: string | undefined;
+  let lidRaw: unknown;
+  try {
+    const response = await http.request<WuzapiEnvelope>({
+      method: 'GET',
+      path: `/user/lid/${encodeURIComponent(phone)}`,
+    });
+    const lidData = asRecord(response.data);
+    lidRaw = { jid: asString(lidData?.jid), lid: asString(lidData?.lid) };
+    const found = asString(lidData?.lid);
+    lid = found ? stripDevice(found) : undefined;
+  } catch (error) {
+    if (!(isWaConnectorError(error) && error.status === 404)) throw error;
+  }
+  return { jid, phone, lid, name, raw: { status: { jid: rawJid, name }, lid: lidRaw } };
 }
 
 async function logoutInstance(http: HttpClient): Promise<void> {
@@ -1618,8 +1654,15 @@ function parseWebhookUnsafe(input: WebhookInput): CanonicalEvent[] {
       return mapReceiptEvent(instanceId, asString(eventRecord.state), data, body);
     case 'Connected':
       return [connectionEvent(instanceId, 'connected', undefined, body)];
-    case 'PairSuccess':
-      return [connectionEvent(instanceId, 'connected', undefined, body)];
+    case 'PairSuccess': {
+      // `event.ID` = JID de telefone e `event.LID` = LID da conta recém-pareada (ambos com aparelho).
+      const event = connectionEvent(instanceId, 'connected', undefined, body);
+      const selfJid = asString(data?.ID);
+      const selfLid = asString(data?.LID);
+      if (selfJid) event.selfJid = stripDevice(selfJid);
+      if (selfLid) event.selfLid = stripDevice(selfLid);
+      return [event];
+    }
     case 'Disconnected':
     case 'LoggedOut':
     case 'ConnectFailure':
