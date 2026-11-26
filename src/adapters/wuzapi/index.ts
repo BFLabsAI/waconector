@@ -627,22 +627,26 @@ async function deleteMessage(http: HttpClient, input: DeleteMessageInput): Promi
 }
 
 /**
- * `POST /chat/markread` (ADR-0013, nível de MENSAGEM; confirmado em código-fonte, func `MarkRead`,
- * `handlers.go`). Corpo: `{Id: string[], ChatPhone}` — `Id` é array, rejeitado com `400` se vazio
- * (`len(t.Id) < 1`); este adapter sempre envia um array com 1 elemento. `SenderPhone` (opcional,
- * só necessário em grupos para identificar de quem é a mensagem) não é enviado —
- * `MarkMessageReadInput` não carrega esse campo. Campos legados `Chat`/`Sender` (aceitos por
- * retrocompatibilidade) não são usados — `ChatPhone`/`SenderPhone` são os "novos campos
- * padronizados e priorizados" segundo o próprio comentário do código-fonte. Este é exatamente o
- * endpoint que a ADR-0012 já tinha identificado como "nível de mensagem, não serve a
- * `chats.markRead`" — implementado agora como `messages.markRead` (ADR-0013). Resposta ignorada,
- * `Promise<void>`.
+ * `POST /chat/markread` (ADR-0013, nível de MENSAGEM; confirmado em código-fonte, func
+ * `markReceipt`, `handlers.go`). Corpo: `{Id: string[], ChatPhone, SenderPhone?}` — `Id` é array,
+ * rejeitado com `400` se vazio (`len(t.Id) < 1`); este adapter sempre envia um array com 1
+ * elemento. `ChatPhone`/`SenderPhone` são os campos "padronizados e priorizados" (os legados
+ * `Chat`/`Sender` só valem na ausência deles) e ambos aceitam qualquer JID (`@s.whatsapp.net`,
+ * `@lid`, `@g.us`) via `parseJID`. `SenderPhone` = autor da mensagem (`MarkMessageReadInput.
+ * senderId`): o whatsmeow precisa dele para o recibo de leitura em GRUPO; só é enviado quando
+ * informado. Este é exatamente o endpoint que a ADR-0012 já tinha identificado como "nível de
+ * mensagem, não serve a `chats.markRead`" — implementado agora como `messages.markRead`
+ * (ADR-0013). Resposta ignorada, `Promise<void>`.
  */
 async function markMessageRead(http: HttpClient, input: MarkMessageReadInput): Promise<void> {
   await http.request({
     method: 'POST',
     path: '/chat/markread',
-    body: { Id: [input.messageId], ChatPhone: toWuzapiPhone(input.to) },
+    body: {
+      Id: [input.messageId],
+      ChatPhone: toWuzapiPhone(input.to),
+      ...(input.senderId ? { SenderPhone: toWuzapiPhone(input.senderId) } : {}),
+    },
   });
 }
 
