@@ -1,0 +1,27 @@
+{
+  "type": "Message",
+  "event": {
+    "Info": {
+      "Chat": "5511900000041@s.whatsapp.net",
+      "Sender": "5511900000041@s.whatsapp.net",
+      "IsFromMe": false,
+      "IsGroup": false,
+      "ID": "FIXT-REVOGA-0001",
+      "Type": "text",
+      "PushName": "Fulano Teste",
+      "Timestamp": "2026-11-05T12:00:00-03:00"
+    },
+    "Message": {
+      "protocolMessage": {
+        "key": {
+          "remoteJID": "5511900000041@s.whatsapp.net",
+          "fromMe": false,
+          "ID": "FIXT-ALVO-0002"
+        },
+        "type": 0
+      }
+    }
+  },
+  "userID": "usuario-fixture",
+  "instanceName": "instancia-fixture"
+}
