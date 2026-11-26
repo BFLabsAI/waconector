@@ -241,6 +241,11 @@ export interface PinMessageInput {
 export interface MarkMessageReadInput {
   to: string;
   messageId: string;
+  /**
+   * Autor da mensagem (JID de telefone ou `@lid`). Providers que exigem o remetente do recibo de
+   * leitura em grupo (wuzapi: `SenderPhone`) o usam; opcional e aditivo (em 1:1 pode ser omitido).
+   */
+  senderId?: string;
 }
 
 /**

@@ -932,7 +932,7 @@ describe('wuzapi adapter: comportamento específico do provider', () => {
     expect(result).toBeUndefined();
   });
 
-  it('messages.markRead envia { Id: [messageId], ChatPhone } (array, sem SenderPhone) para POST /chat/markread', async () => {
+  it('messages.markRead envia { Id: [messageId], ChatPhone } (array, sem SenderPhone quando senderId é omitido) para POST /chat/markread', async () => {
     let capturedBody: Record<string, unknown> | undefined;
     const adapter = wuzapi(
       buildAdapterOptions({
@@ -951,6 +951,44 @@ describe('wuzapi adapter: comportamento específico do provider', () => {
     ).resolves.toBeUndefined();
 
     expect(capturedBody).toEqual({ Id: ['contrato-msg-lida'], ChatPhone: '5511999999999' });
+  });
+
+  it('messages.markRead em grupo envia SenderPhone com o autor (LID ou telefone) quando senderId é informado', async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const adapter = wuzapi(
+      buildAdapterOptions({
+        fetch: async (input, init) => {
+          const url = new URL(String(input));
+          if (url.pathname === '/chat/markread') {
+            bodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+          }
+          return createFetchStub()(input, init);
+        },
+      }),
+    );
+    const wa = createConnector(adapter);
+    await wa.messages.markRead({
+      to: '120363000000000001@g.us',
+      messageId: 'FIXT-GRUPO-0003',
+      senderId: '100000000000012@lid',
+    });
+    await wa.messages.markRead({
+      to: '100000000000030@lid',
+      messageId: 'FIXT-CITADA-0001',
+      senderId: '100000000000030@lid',
+    });
+    expect(bodies).toEqual([
+      {
+        Id: ['FIXT-GRUPO-0003'],
+        ChatPhone: '120363000000000001@g.us',
+        SenderPhone: '100000000000012@lid',
+      },
+      {
+        Id: ['FIXT-CITADA-0001'],
+        ChatPhone: '100000000000030@lid',
+        SenderPhone: '100000000000030@lid',
+      },
+    ]);
   });
 
   it('não declara messages.forward/star/unstar/pin/unpin (busca exaustiva em routes.go não encontrou endpoint)', () => {
