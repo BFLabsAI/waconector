@@ -6,6 +6,7 @@ import type {
   ContactsApi,
   GroupsApi,
   InstanceApi,
+  LabelsApi,
   MessagesApi,
   PresenceApi,
   WaAdapter,
@@ -32,6 +33,8 @@ import type {
   ContactProfilePicture,
   CreateGroupInput,
   DeleteMessageInput,
+  DownloadedMedia,
+  DownloadMediaInput,
   EditMessageInput,
   GroupInfo,
   GroupInviteLink,
@@ -40,6 +43,7 @@ import type {
   InstanceState,
   InstanceStatus,
   JoinGroupInviteInput,
+  LabelChatInput,
   MarkMessageReadInput,
   MediaKind,
   MediaRef,
@@ -47,6 +51,7 @@ import type {
   MessageKind,
   PresenceState,
   QuotedMessage,
+  ReactionInfo,
   RejectCallInput,
   SendContactCardInput,
   SendLocationInput,
@@ -59,6 +64,7 @@ import type {
   UpdateGroupDescriptionInput,
   UpdateGroupPictureInput,
   UpdateGroupSubjectInput,
+  UpdateLabelInput,
   WaMessage,
 } from '../../core/types';
 
@@ -125,6 +131,7 @@ const WUZAPI_CAPABILITIES: CapabilitySet = [
   'messages.edit',
   'messages.delete',
   'messages.markRead',
+  'messages.download',
   'messages.sendLocation',
   'messages.sendContactCard',
   'messages.sendPoll',
@@ -152,10 +159,22 @@ const WUZAPI_CAPABILITIES: CapabilitySet = [
   'contacts.listBlocked',
   'chats.archive',
   'chats.unarchive',
+  'chats.mute',
+  'chats.unmute',
+  'chats.pin',
+  'chats.unpin',
+  'chats.markRead',
+  'chats.markUnread',
   'presence.setTyping',
   'presence.set',
   'presence.subscribe',
+  'labels.update',
+  'labels.delete',
+  'labels.addToChat',
+  'labels.removeFromChat',
   'channels.list',
+  'channels.follow',
+  'channels.unfollow',
   'calls.reject',
   'webhooks.parse',
 ];
@@ -190,6 +209,7 @@ export function wuzapi(options: WuzapiOptions): WaAdapter {
     edit: (input) => editMessage(http, input),
     delete: (input) => deleteMessage(http, input),
     markRead: (input) => markMessageRead(http, input),
+    download: (input) => downloadMedia(http, input),
     sendLocation: (input) => sendLocation(http, input),
     sendContactCard: (input) => sendContactCard(http, input),
     sendPoll: (input) => sendPoll(http, input),
@@ -224,34 +244,33 @@ export function wuzapi(options: WuzapiOptions): WaAdapter {
   };
 
   /**
-   * Ver ADR-0012. Cobertura real de `chats.*` no Wuzapi, verificada diretamente contra o
-   * código-fonte de `asternic/wuzapi` (`routes.go`/`handlers.go`, branch `main`, 2026-07-12 — o
-   * relatório de pesquisa dedicado desta rodada não estava disponível para este provider, então a
-   * verificação foi feita direto no repositório público em vez de a partir desse relatório):
-   *
-   * - **`archive`/`unarchive`**: implementados — MESMO endpoint `POST /chat/archive`, variando só
-   *   o booleano `archive` (ver `setChatArchived`). Confirma e ao mesmo tempo corrige uma leitura
-   *   mais estrita do achado registrado em ADR-0012 ("Wuzapi não tem nenhuma [operação] exceto
-   *   archive"): o endpoint real já cobre as duas direções via um único parâmetro, não é um
-   *   `archive` sem `unarchive` (diferente do caso do Evolution GO, citado na mesma ADR).
-   * - **`mute`/`unmute`/`pin`/`unpin`**: **não implementados** — busca exaustiva em `routes.go`
-   *   (todas as ~90 rotas registradas em `s.router.Handle(...)`) não encontra nenhum handler
-   *   equivalente a mutar/fixar uma conversa. Confirma o achado da ADR-0012 para este subconjunto.
-   * - **`markRead`/`markUnread`**: **não implementados**, apesar de `POST /chat/markread` EXISTIR
-   *   (`handlers.go`, func `MarkRead`) — achado que a ADR-0012 não previu para este provider. O
-   *   endpoint não serve ao contrato canônico `chats.markRead(chatId)`: seu corpo exige `Id`
-   *   (array de ids de MENSAGEM, `len(t.Id) < 1` rejeitado com 400), além de `ChatPhone`, não
-   *   aceita marcar a conversa inteira só por `chatId`. Ou seja, é a operação de NÍVEL DE MENSAGEM
-   *   que a própria ADR-0012 já reserva para um eventual `messages.markRead` futuro, distinto de
-   *   `chats.markRead` (nível de chat) — implementar aqui exigiria inventar/buscar ids de mensagem
-   *   não lidas (uma chamada extra a `/chat/history`), violando a regra de uma única chamada por
-   *   operação canônica (mesmo critério do ADR-0010). Não existe `markUnread` nenhum no código.
-   *
-   * Ver docs/providers/wuzapi.md, seção "Conversas (chats.*)".
+   * Ver ADR-0012. `archive`/`unarchive` existem no wuzapi upstream (`POST /chat/archive`, um único
+   * endpoint com booleano). `mute`/`unmute`/`pin`/`unpin`/`markRead`/`markUnread` NÃO existem no
+   * upstream (`asternic/wuzapi`) e só funcionam no fork BF (`/chat/mute`, `/chat/pinchat`,
+   * `/chat/unread`): contra um wuzapi upstream essas operações devolvem 404 do servidor. Ver
+   * docs/providers/wuzapi.md, seções "Conversas (chats.*)" e "Extensões do fork BF Labs".
    */
   const chats: ChatsApi = {
     archive: (chatId) => setChatArchived(http, chatId, true),
     unarchive: (chatId) => setChatArchived(http, chatId, false),
+    mute: (chatId) => setChatMuted(http, chatId, true),
+    unmute: (chatId) => setChatMuted(http, chatId, false),
+    pin: (chatId) => setChatPinned(http, chatId, true),
+    unpin: (chatId) => setChatPinned(http, chatId, false),
+    markRead: (chatId) => setChatUnread(http, chatId, false),
+    markUnread: (chatId) => setChatUnread(http, chatId, true),
+  };
+
+  /**
+   * Namespace `labels.*` (ADR-0016). Cobertura 4/6 no fork BF (`/labels/edit`, `/labels/chat`).
+   * Sem `list` (não há rota de leitura) e sem `create` (o `LabelID` numérico é escolhido pelo
+   * chamador no servidor, sem como descobrir ids livres nem devolver um `LabelInfo` com id gerado).
+   */
+  const labels: LabelsApi = {
+    update: (input) => updateLabel(http, input),
+    delete: (labelId) => deleteLabel(http, labelId),
+    addToChat: (input) => setLabelOnChat(http, input, true),
+    removeFromChat: (input) => setLabelOnChat(http, input, false),
   };
 
   const presence: PresenceApi = {
@@ -261,12 +280,14 @@ export function wuzapi(options: WuzapiOptions): WaAdapter {
   };
 
   /**
-   * Namespace `channels.*` (ADR-0017). Cobertura 1/6 — só `list`, SOMENTE LEITURA (canais que a
-   * própria conta já está inscrita). Busca exaustiva por "newsletter" em `routes.go` só encontrou
-   * essa uma rota — sem `create`/`getInfo`/`delete`/`follow`/`unfollow`, busca negativa confirmada.
+   * Namespace `channels.*` (ADR-0017). Cobertura 3/9: `list`, e `follow`/`unfollow` (fork BF:
+   * `/newsletter/join`/`/newsletter/leave`). Sem `create`/`getInfo`/`delete`/`getMessages`/
+   * `markViewed`/`reactToPost` — nenhuma rota correspondente em `routes.go`.
    */
   const channels: ChannelsApi = {
     list: () => listChannels(http),
+    follow: (channelId) => setChannelFollowed(http, channelId, true),
+    unfollow: (channelId) => setChannelFollowed(http, channelId, false),
   };
 
   /**
@@ -289,6 +310,7 @@ export function wuzapi(options: WuzapiOptions): WaAdapter {
     contacts,
     chats,
     presence,
+    labels,
     channels,
     calls,
     parseWebhook: (input) => parseWebhook(input, options.webhookHmacKey),
@@ -311,6 +333,11 @@ export function wuzapi(options: WuzapiOptions): WaAdapter {
  */
 function toWuzapiPhone(chatId: string): string {
   return chatId;
+}
+
+/** Menção: dígitos viram `dígitos@s.whatsapp.net`; JID explícito segue intacto. */
+function toMentionJid(value: string): string {
+  return value.includes('@') ? value : `${value.replace(/\D/g, '')}@s.whatsapp.net`;
 }
 
 interface MediaEndpoint {
@@ -439,13 +466,19 @@ function mapInstanceState(data: Record<string, unknown> | undefined): InstanceSt
 async function sendText(http: HttpClient, input: SendTextInput): Promise<SentMessage> {
   const phone = toWuzapiPhone(input.to);
   const body: Record<string, unknown> = { Phone: phone, Body: input.text };
+  const contextInfo: Record<string, unknown> = {};
   if (input.quotedId) {
     // ContextInfo exige StanzaID e Participant juntos; SendTextInput não carrega o remetente da
     // mensagem citada — suposição documentada em docs/providers/wuzapi.md (Participant = Phone).
-    body.ContextInfo = { StanzaID: input.quotedId, Participant: phone };
+    contextInfo.StanzaID = input.quotedId;
+    contextInfo.Participant = phone;
   }
-  // SendTextInput.mentions não tem campo confirmado em /chat/send/text nesta pesquisa — ignorado
-  // silenciosamente (mesmo padrão do adapter Z-API). Ver docs/providers/wuzapi.md.
+  if (input.mentions && input.mentions.length > 0) {
+    // `ContextInfo.MentionedJID` (handlers.go, SendMessage). O servidor também detecta tokens
+    // `@<telefone>` no corpo sozinho; o campo explícito cobre menções sem o token no texto.
+    contextInfo.MentionedJID = input.mentions.map(toMentionJid);
+  }
+  if (Object.keys(contextInfo).length > 0) body.ContextInfo = contextInfo;
 
   const response = await http.request<WuzapiEnvelope>({
     method: 'POST',
@@ -675,6 +708,80 @@ async function sendPoll(http: HttpClient, input: SendPollInput): Promise<SentMes
 /** Ver `sendContactCard`: vCard 3.0 mínimo, mesmo formato que a Evolution confirma gerar server-side. */
 function buildVcard(name: string, phone: string): string {
   return `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL;type=CELL;type=VOICE;waid=${phone}:+${phone}\nEND:VCARD`;
+}
+
+/** Submensagem do protobuf -> rota de download da wuzapi (todas aceitam o mesmo descritor). */
+const DOWNLOAD_ENDPOINTS: ReadonlyArray<readonly [string, string]> = [
+  ['imageMessage', '/chat/downloadimage'],
+  ['videoMessage', '/chat/downloadvideo'],
+  ['audioMessage', '/chat/downloadaudio'],
+  ['documentMessage', '/chat/downloaddocument'],
+  ['stickerMessage', '/chat/downloadsticker'],
+];
+
+/**
+ * `messages.download` (ADR-0020): `POST /chat/download{image,video,audio,document,sticker}`. A
+ * wuzapi é STATELESS para isto: o corpo é o descritor cifrado da mídia (`Url`, `DirectPath`,
+ * `MediaKey`, `Mimetype`, `FileEncSHA256`, `FileSHA256`, `FileLength`), tirado de `input.raw` (o
+ * `WaMessage.raw` = corpo do webhook, em modo json ou form). Resposta: `{Mimetype, Data}` com `Data`
+ * = data URI base64. Sem `raw` (ou sem descritor) cai em `/chat/downloadimage` com corpo vazio, como
+ * o adapter Evolution GO; o servidor responde o erro. Com `raw` sem nenhuma submensagem de mídia
+ * lança `INVALID_INPUT`. Se o webhook trouxe `s3.url`, prefira baixar essa URL direto: é mais barato.
+ */
+async function downloadMedia(
+  http: HttpClient,
+  input: DownloadMediaInput,
+): Promise<DownloadedMedia> {
+  const source = findMediaDescriptor(input.raw);
+  if (input.raw !== undefined && !source) {
+    throw new WaConnectorError(
+      'INVALID_INPUT',
+      'Wuzapi: messages.download exige que "raw" seja o webhook de uma mensagem de mídia (event.Message.<tipo>Message).',
+      { provider: PROVIDER },
+    );
+  }
+  const response = await http.request<WuzapiEnvelope>({
+    method: 'POST',
+    path: source?.path ?? '/chat/downloadimage',
+    body: source?.body ?? {},
+  });
+  const data = asRecord(response.data);
+  const dataUri = asString(data?.Data);
+  const match = dataUri ? /^data:([^;,]*)(?:;[^,]*)*;base64,(.*)$/s.exec(dataUri) : null;
+  return {
+    base64: match ? (match[2] ?? '') : (dataUri ?? ''),
+    mimeType: asString(data?.Mimetype) ?? (match?.[1] ? match[1] : undefined),
+    filename: source?.fileName,
+    raw: response,
+  };
+}
+
+function findMediaDescriptor(
+  raw: unknown,
+): { path: string; body: Record<string, unknown>; fileName?: string } | undefined {
+  let record = asRecord(raw);
+  const jsonData = asString(record?.jsonData);
+  if (jsonData !== undefined) record = asRecord(safeJsonParse(jsonData));
+  const message = asRecord(asRecord(record?.event)?.Message);
+  if (!message) return undefined;
+  for (const [key, path] of DOWNLOAD_ENDPOINTS) {
+    const media = asRecord(message[key]);
+    if (!media) continue;
+    return {
+      path,
+      fileName: asString(media.fileName),
+      body: {
+        Url: asString(media.URL) ?? asString(media.url),
+        DirectPath: asString(media.directPath),
+        MediaKey: media.mediaKey,
+        Mimetype: asString(media.mimetype),
+        FileEncSHA256: media.fileEncSHA256,
+        FileSHA256: media.fileSHA256,
+        FileLength: asNumberLike(media.fileLength),
+      },
+    };
+  }
+  return undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -1195,6 +1302,113 @@ async function setChatArchived(http: HttpClient, chatId: string, archive: boolea
 }
 
 /**
+ * `chats.mute`/`chats.unmute` — `POST /chat/mute` (fork BF; `handlers_conversation.go`, `mutePatch`).
+ * Corpo `{Chat, Mute}` (campos desconhecidos são rejeitados com 400, então só estes dois). Sem
+ * `DurationSeconds` o whatsmeow silencia por tempo indeterminado (o contrato canônico não tem
+ * duração, ADR-0012).
+ */
+async function setChatMuted(http: HttpClient, chatId: string, mute: boolean): Promise<void> {
+  await http.request({
+    method: 'POST',
+    path: '/chat/mute',
+    body: { Chat: toWuzapiChatJid(chatId), Mute: mute },
+  });
+}
+
+/** `chats.pin`/`chats.unpin` — `POST /chat/pinchat` `{Chat, Pin}` (fork BF; `handlers_chatpin.go`). Fixa a CONVERSA. */
+async function setChatPinned(http: HttpClient, chatId: string, pin: boolean): Promise<void> {
+  await http.request({
+    method: 'POST',
+    path: '/chat/pinchat',
+    body: { Chat: toWuzapiChatJid(chatId), Pin: pin },
+  });
+}
+
+/**
+ * `chats.markRead`/`chats.markUnread` — `POST /chat/unread` `{Chat, Unread}` (fork BF;
+ * `unreadPatch`: `BuildMarkChatAsRead(chat, !Unread)`). `Unread: false` marca a conversa INTEIRA
+ * como lida (nível de chat, sem ids de mensagem — diferente de `messages.markRead`/
+ * `POST /chat/markread`); `Unread: true` volta a marcá-la como não lida.
+ */
+async function setChatUnread(http: HttpClient, chatId: string, unread: boolean): Promise<void> {
+  await http.request({
+    method: 'POST',
+    path: '/chat/unread',
+    body: { Chat: toWuzapiChatJid(chatId), Unread: unread },
+  });
+}
+
+/**
+ * `labels.update` — `POST /labels/edit` `{LabelID, Name, Color, Deleted:false}` (fork BF;
+ * `labelEditPatch`). `LabelID` é numérico (string de dígitos) e `Color` é um inteiro 0-19 (paleta
+ * do WhatsApp Business), obrigatórios quando não se está apagando: `UpdateLabelInput.color` ausente
+ * ou fora disso lança `INVALID_INPUT` aqui, em vez de deixar o servidor responder 400.
+ */
+async function updateLabel(http: HttpClient, input: UpdateLabelInput): Promise<void> {
+  assertLabelId(input.labelId);
+  const color = input.color === undefined ? Number.NaN : Number(input.color);
+  if (!Number.isInteger(color) || color < 0 || color > 19) {
+    throw new WaConnectorError(
+      'INVALID_INPUT',
+      'Wuzapi: labels.update exige "color" inteiro de 0 a 19 (índice da paleta do WhatsApp).',
+      { provider: PROVIDER },
+    );
+  }
+  await http.request({
+    method: 'POST',
+    path: '/labels/edit',
+    body: { LabelID: input.labelId, Name: input.name, Color: color, Deleted: false },
+  });
+}
+
+/** `labels.delete` — `POST /labels/edit` `{LabelID, Deleted:true}`. */
+async function deleteLabel(http: HttpClient, labelId: string): Promise<void> {
+  assertLabelId(labelId);
+  await http.request({
+    method: 'POST',
+    path: '/labels/edit',
+    body: { LabelID: labelId, Deleted: true },
+  });
+}
+
+/** `labels.addToChat`/`removeFromChat` — `POST /labels/chat` `{Chat, LabelID, Labeled}`. */
+async function setLabelOnChat(
+  http: HttpClient,
+  input: LabelChatInput,
+  labeled: boolean,
+): Promise<void> {
+  assertLabelId(input.labelId);
+  await http.request({
+    method: 'POST',
+    path: '/labels/chat',
+    body: { Chat: toWuzapiChatJid(input.chatId), LabelID: input.labelId, Labeled: labeled },
+  });
+}
+
+function assertLabelId(labelId: string): void {
+  if (!/^(0|[1-9]\d*)$/.test(labelId)) {
+    throw new WaConnectorError(
+      'INVALID_INPUT',
+      'Wuzapi: "labelId" precisa ser numérico (string de dígitos, sem zeros à esquerda).',
+      { provider: PROVIDER },
+    );
+  }
+}
+
+/** `channels.follow`/`unfollow` — `POST /newsletter/join` / `/newsletter/leave` `{NewsletterJID}`. */
+async function setChannelFollowed(
+  http: HttpClient,
+  channelId: string,
+  follow: boolean,
+): Promise<void> {
+  await http.request({
+    method: 'POST',
+    path: follow ? '/newsletter/join' : '/newsletter/leave',
+    body: { NewsletterJID: channelId },
+  });
+}
+
+/**
  * `presence.setTyping` (ADR-0015) — `POST /chat/presence`, confiança Alta (documentado no
  * `API.md` e no código-fonte). Corpo: `{Phone, State, Media}` — **o enum `State` só tem
  * `"composing"`/`"paused"`** (confirmado na prosa da doc), sem um terceiro valor para "gravando
@@ -1392,7 +1606,15 @@ function parseWebhookUnsafe(input: WebhookInput): CanonicalEvent[] {
     case 'Disconnected':
     case 'LoggedOut':
     case 'ConnectFailure':
+    case 'PairError':
+    case 'ClientOutdated':
+    case 'TemporaryBan':
       return [connectionEvent(instanceId, 'disconnected', undefined, body)];
+    case 'KeepAliveTimeout':
+      // Suposição: o keepalive falhou e o whatsmeow tenta reconectar sozinho.
+      return [connectionEvent(instanceId, 'connecting', undefined, body)];
+    case 'KeepAliveRestored':
+      return [connectionEvent(instanceId, 'connected', undefined, body)];
     case 'QR':
       // Diferente de "Message"/"ReadReceipt", aqui `event` é a STRING literal "code" (nome do
       // evento interno do whatsmeow), não um objeto — `qrCodeBase64` é entregue como campo IRMÃO
@@ -1543,6 +1765,7 @@ function mapMessageEvent(
     kind: content.kind,
     text: content.text,
     media,
+    reaction: content.reaction,
     quotedId: context.quoted?.id,
     quoted: context.quoted,
     mentionedIds: context.mentionedIds,
@@ -1652,6 +1875,7 @@ interface MessageContent {
   kind: MessageKind;
   text?: string;
   media?: MediaRef;
+  reaction?: ReactionInfo;
 }
 
 /**
@@ -1696,7 +1920,18 @@ function mapMessageContent(message: Record<string, unknown> | undefined): Messag
   }
   if (message.locationMessage) return { kind: 'location' };
   if (message.contactMessage) return { kind: 'contact' };
-  if (message.reactionMessage) return { kind: 'reaction' };
+  const reactionMessage = asRecord(message.reactionMessage);
+  if (reactionMessage) {
+    const key = asRecord(reactionMessage.key);
+    const targetMessageId = asString(key?.ID) ?? asString(key?.id);
+    return {
+      kind: 'reaction',
+      reaction:
+        targetMessageId !== undefined
+          ? { emoji: asString(reactionMessage.text) ?? '', targetMessageId }
+          : undefined,
+    };
+  }
   if (message.pollCreationMessage || message.pollUpdateMessage) return { kind: 'poll' };
 
   return { kind: 'unknown' };
