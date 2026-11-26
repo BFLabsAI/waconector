@@ -66,6 +66,11 @@ export interface MediaRef {
   size?: number;
   /** Identificador opaco do arquivo no provider — nunca usado como entrada de `sendMedia`. */
   id?: string;
+  /**
+   * `true` quando o áudio é uma nota de voz (push-to-talk gravada na hora), `false`/ausente para
+   * áudio comum. Só faz sentido em `kind: 'audio'`; aditivo, preenchido por adapters que distinguem.
+   */
+  voice?: boolean;
 }
 
 /** Detalhe de uma reação (presente em `WaMessage` quando `kind === 'reaction'`). */
