@@ -1,0 +1,20 @@
+{
+  "type": "Message",
+  "userID": "1",
+  "instanceName": "minha-sessao",
+  "event": {
+    "Info": {
+      "ID": "3EB0FAKE00000000GRP01",
+      "Chat": "120363000000000000@g.us",
+      "Sender": "270000000000002@lid",
+      "SenderAlt": "5511911111111@s.whatsapp.net",
+      "IsFromMe": false,
+      "IsGroup": true,
+      "PushName": "Beltrano Exemplo",
+      "Timestamp": "2026-07-11T10:12:00Z"
+    },
+    "Message": {
+      "conversation": "Mensagem de teste em grupo"
+    }
+  }
+}

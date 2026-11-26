@@ -1,0 +1,18 @@
+{
+  "type": "Message",
+  "userID": "1",
+  "instanceName": "minha-sessao",
+  "event": {
+    "Info": {
+      "ID": "3EB0FAKE00000000ME001",
+      "Chat": "5511900000000@s.whatsapp.net",
+      "Sender": "5511999990000:3@s.whatsapp.net",
+      "IsFromMe": true,
+      "IsGroup": false,
+      "Timestamp": "2026-07-11T10:13:00Z"
+    },
+    "Message": {
+      "conversation": "Resposta enviada pelo proprio numero"
+    }
+  }
+}
