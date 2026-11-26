@@ -1,0 +1,36 @@
+{
+  "type": "Message",
+  "event": {
+    "Info": {
+      "Chat": "5511900000020@s.whatsapp.net",
+      "Sender": "5511900000020@s.whatsapp.net",
+      "IsFromMe": false,
+      "IsGroup": false,
+      "AddressingMode": "pn",
+      "SenderAlt": "",
+      "RecipientAlt": "",
+      "BroadcastListOwner": "",
+      "BroadcastRecipients": null,
+      "ID": "FIXT-IMAGEM-0002",
+      "ServerID": 0,
+      "Type": "media",
+      "PushName": "Fulano Teste",
+      "Timestamp": "2026-11-05T12:00:00-03:00",
+      "Category": "",
+      "Multicast": false,
+      "MediaType": "image",
+      "VerifiedName": null,
+      "Edit": "",
+      "DeviceSentMeta": null
+    },
+    "Message": {
+      "imageMessage": {
+        "mimetype": "image/png",
+        "caption": "",
+        "URL": "https://mmg.whatsapp.net/cifrado-fixture"
+      }
+    }
+  },
+  "userID": "usuario-fixture",
+  "instanceName": "instancia-fixture"
+}

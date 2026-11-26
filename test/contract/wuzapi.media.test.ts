@@ -6,6 +6,7 @@ import audioS3Fixture from '../../src/adapters/wuzapi/fixtures/webhook-message-a
 import documentS3Fixture from '../../src/adapters/wuzapi/fixtures/webhook-message-document-s3.json';
 import documentNoExtFixture from '../../src/adapters/wuzapi/fixtures/webhook-message-document-sem-extensao.json';
 import imageS3Fixture from '../../src/adapters/wuzapi/fixtures/webhook-message-image-s3.json';
+import imageSemS3Fixture from '../../src/adapters/wuzapi/fixtures/webhook-message-image-sem-s3.json';
 
 const wa = createConnector(
   wuzapi({ baseUrl: 'https://wuzapi.exemplo.test', token: 'token-de-teste-nao-real' }),
@@ -65,14 +66,35 @@ describe('wuzapi: mídia recebida via bloco s3 do webhook', () => {
     expect(message.media?.url).toBe(imageS3Fixture.s3.url);
   });
 
-  it('sem s3 nem base64, mantém o descritor do protobuf (útil para messages.download)', () => {
+  it('sem s3 nem base64, NÃO expõe a URL cifrada do CDN como media.url; descritor segue em raw', () => {
     const body = structuredClone(imageS3Fixture) as Record<string, unknown>;
     body.s3 = undefined;
     const message = firstMessage(body);
     expect(message.media?.kind).toBe('image');
     expect(message.media?.mimeType).toBe('image/jpeg');
     expect(message.media?.size).toBe(48219);
-    expect(message.media?.url).toBe('https://mmg.exemplo.test/cifrado/abc.enc');
+    expect(message.media?.url).toBeUndefined();
+    expect(JSON.stringify(message.raw)).toContain('https://mmg.exemplo.test/cifrado/abc.enc');
+  });
+
+  it('sem s3/base64 e sem fileName: gera anexo-<id><ext> pelo mimetype', () => {
+    const message = firstMessage(imageSemS3Fixture);
+    expect(message.media?.url).toBeUndefined();
+    expect(message.media).toMatchObject({
+      kind: 'image',
+      mimeType: 'image/png',
+      filename: 'anexo-FIXT-IMAGEM-0002.png',
+    });
+    expect(JSON.stringify(message.raw)).toContain('https://mmg.whatsapp.net/cifrado-fixture');
+  });
+
+  it('nome existente é preservado; mimetype desconhecido gera anexo-<id> sem extensão', () => {
+    const body = structuredClone(imageSemS3Fixture) as {
+      event: { Message: { imageMessage: Record<string, unknown> } };
+    };
+    body.event.Message.imageMessage.mimetype = 'application/x-desconhecido';
+    expect(firstMessage(body).media?.filename).toBe('anexo-FIXT-IMAGEM-0002');
+    expect(firstMessage(documentS3Fixture).media?.filename).toBe('relatorio.pdf');
   });
 
   it('modo form (jsonData string) também expõe o s3', () => {
