@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import type {
   CallsApi,
   ChannelsApi,
@@ -9,6 +10,7 @@ import type {
   PresenceApi,
   WaAdapter,
   WebhookInput,
+  WebhookVerification,
 } from '../../core/adapter';
 import type { CapabilitySet } from '../../core/capabilities';
 import { extractInviteCode, normalizeInviteLink } from '../../core/chat-id';
@@ -94,6 +96,15 @@ export interface WuzapiOptions {
    * 10s no servidor para validar o login antes de responder. Padrão: `true` (não bloqueia).
    */
   immediate?: boolean;
+  /**
+   * Chave HMAC configurada na wuzapi (`POST /session/hmac/config`, mín. 32 caracteres). Quando
+   * definida, `parseWebhook` verifica o header `x-hmac-signature` (HMAC-SHA256 em hex do corpo bruto)
+   * ANTES de processar: webhook sem assinatura, com assinatura inválida ou sem `WebhookInput.rawBody`
+   * vira evento `unknown` (falha fechado). Opt-in: sem esta opção nada é verificado (comportamento
+   * anterior). `adapter.verifyWebhook(input)` / `wa.webhooks.verify(input)` fazem só a verificação.
+   * Ver docs/providers/wuzapi.md#verificação-hmac-do-webhook.
+   */
+  webhookHmacKey?: string;
   /** Timeout por tentativa, em ms (repassado ao `HttpClient`). */
   timeoutMs?: number;
   /** Retentativas para 429/5xx/erros de rede (repassado ao `HttpClient`; ver ADR-0007). */
@@ -151,7 +162,11 @@ const WUZAPI_CAPABILITIES: CapabilitySet = [
 
 /** Fábrica do adapter Wuzapi. */
 export function wuzapi(options: WuzapiOptions): WaAdapter {
-  const secrets = [options.token, ...(options.adminToken ? [options.adminToken] : [])];
+  const secrets = [
+    options.token,
+    ...(options.adminToken ? [options.adminToken] : []),
+    ...(options.webhookHmacKey ? [options.webhookHmacKey] : []),
+  ];
   const http = new HttpClient({
     baseUrl: options.baseUrl,
     headers: { token: options.token },
@@ -276,7 +291,8 @@ export function wuzapi(options: WuzapiOptions): WaAdapter {
     presence,
     channels,
     calls,
-    parseWebhook: (input) => parseWebhook(input),
+    parseWebhook: (input) => parseWebhook(input, options.webhookHmacKey),
+    verifyWebhook: (input) => verifyWuzapiWebhook(input, options.webhookHmacKey),
   };
 }
 
@@ -1308,8 +1324,14 @@ async function rejectCall(http: HttpClient, input: RejectCallInput): Promise<voi
  * Traduz um webhook Wuzapi para eventos canônicos. Nunca lança: qualquer formato inesperado
  * (incluindo exceções internas) vira um evento `unknown` com `reason`.
  */
-function parseWebhook(input: WebhookInput): CanonicalEvent[] {
+function parseWebhook(input: WebhookInput, webhookHmacKey?: string): CanonicalEvent[] {
   try {
+    if (webhookHmacKey !== undefined) {
+      const verification = verifyWuzapiWebhook(input, webhookHmacKey);
+      if (!verification.valid) {
+        return [unknownEvent(input.body, verification.reason ?? 'Assinatura HMAC inválida.')];
+      }
+    }
     return parseWebhookUnsafe(input);
   } catch (error) {
     return [
@@ -1390,6 +1412,87 @@ function parseWebhookUnsafe(input: WebhookInput): CanonicalEvent[] {
     default:
       return [unknownEvent(body, `Evento Wuzapi não reconhecido: "${type}".`, instanceId)];
   }
+}
+
+// ---------------------------------------------------------------------------
+// verificação HMAC do webhook (opt-in)
+// ---------------------------------------------------------------------------
+
+/** Header com que a wuzapi assina a entrega (`helpers.go`, `req.SetHeader("x-hmac-signature", ...)`). */
+export const WUZAPI_SIGNATURE_HEADER = 'x-hmac-signature';
+
+/**
+ * Confere uma assinatura de webhook da wuzapi: HMAC-SHA256 (hex) do CORPO BRUTO com a chave
+ * configurada em `/session/hmac/config` (`generateHmacSignature`, `helpers.go`), comparado em tempo
+ * constante. Função pura e standalone, para gateways que verificam antes de parsear. Nunca lança;
+ * chave vazia, assinatura ausente ou formato errado devolvem `false`.
+ *
+ * `rawBody` precisa ser o corpo EXATO recebido (antes do body-parser): `JSON.stringify(body)` não é
+ * byte-a-byte igual. Em `WEBHOOK_FORMAT=form` (default da wuzapi) o corpo assinado é o próprio
+ * `application/x-www-form-urlencoded` recebido; em `json`, o JSON recebido. Limitação: eventos com
+ * mídia entregue em `base64`/`both` saem como `multipart/form-data` e a wuzapi assina o JSON dos
+ * campos (não os bytes do multipart) — para esses, use `media_delivery=s3`.
+ */
+export function verifyWuzapiSignature(
+  rawBody: string | Uint8Array,
+  signature: string | undefined,
+  hmacKey: string,
+): boolean {
+  if (!hmacKey || !signature) return false;
+  try {
+    const expected = createHmac('sha256', hmacKey).update(rawBody).digest('hex');
+    const expectedBuffer = Buffer.from(expected, 'utf8');
+    const receivedBuffer = Buffer.from(signature.trim().toLowerCase(), 'utf8');
+    // timingSafeEqual lança com tamanhos diferentes: assinatura de tamanho errado é só inválida.
+    return (
+      expectedBuffer.length === receivedBuffer.length &&
+      timingSafeEqual(expectedBuffer, receivedBuffer)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Verificação no formato do contrato (`WaAdapter.verifyWebhook`): header + `rawBody` + chave. Falha fechado. */
+function verifyWuzapiWebhook(
+  input: WebhookInput,
+  webhookHmacKey: string | undefined,
+): WebhookVerification {
+  if (!webhookHmacKey) {
+    return { valid: false, reason: 'webhookHmacKey não configurada no adapter wuzapi.' };
+  }
+  if (input.rawBody === undefined) {
+    return {
+      valid: false,
+      reason:
+        'webhookHmacKey está configurada, mas WebhookInput.rawBody não foi fornecido — a verificação ' +
+        'HMAC exige o corpo bruto do request. Falhando fechado: webhook não processado.',
+    };
+  }
+  const signature = firstHeaderValue(input.headers, WUZAPI_SIGNATURE_HEADER);
+  if (signature === undefined) {
+    return {
+      valid: false,
+      reason: `webhookHmacKey está configurada, mas o header "${WUZAPI_SIGNATURE_HEADER}" não veio no webhook.`,
+    };
+  }
+  if (!verifyWuzapiSignature(input.rawBody, signature, webhookHmacKey)) {
+    return {
+      valid: false,
+      reason: `Assinatura HMAC do webhook wuzapi inválida ("${WUZAPI_SIGNATURE_HEADER}" não confere).`,
+    };
+  }
+  return { valid: true };
+}
+
+/** Nomes de header chegam com capitalização variada conforme o framework — busca case-insensitive. */
+function firstHeaderValue(headers: WebhookInput['headers'], name: string): string | undefined {
+  if (!headers) return undefined;
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() !== name) continue;
+    return Array.isArray(value) ? value[0] : value;
+  }
+  return undefined;
 }
 
 function safeJsonParse(text: string): unknown {
