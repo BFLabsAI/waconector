@@ -868,3 +868,17 @@ lê `contextInfo.stanzaID` -> `WaMessage.quotedId`, e monta `WaMessage.quoted` =
 `{id, text, kind, from, media}` a partir de `quotedMessage` (texto ou legenda; `from` = `participant`
 sem sufixo de aparelho). `contextInfo.mentionedJID` -> `WaMessage.mentionedIds` (JIDs como vieram,
 podendo ser `@lid`).
+
+### Verificação HMAC do webhook
+
+Fonte: `helpers.go` (`generateHmacSignature`) da wuzapi. Header **`x-hmac-signature`**, valor =
+**HMAC-SHA256 em hex** do corpo bruto enviado, com a chave configurada em `POST /session/hmac/config`
+(mínimo 32 caracteres; só assina se houver chave). Em `WEBHOOK_FORMAT=json` o corpo assinado é o JSON
+entregue; em `form` (default) é o `application/x-www-form-urlencoded` entregue (chaves ordenadas).
+Eventos de mídia em `base64`/`both` saem como `multipart/form-data` e a assinatura é sobre o JSON dos
+campos, não sobre os bytes do multipart — não verificável pelo `rawBody`; use `media_delivery=s3`.
+
+Uso: `wuzapi({ ..., webhookHmacKey })` faz `parseWebhook` verificar antes de processar (falha fechado,
+exige `WebhookInput.rawBody`); `wa.webhooks.verify({ headers, rawBody, body })` (novo no core, via
+`WaAdapter.verifyWebhook` opcional) só verifica; `verifyWuzapiSignature(rawBody, signature, key)` é a
+função pura exportada por `waconector/wuzapi`.

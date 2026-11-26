@@ -1,4 +1,10 @@
-export type { InstanceApi, MessagesApi, WaAdapter, WebhookInput } from './core/adapter';
+export type {
+  InstanceApi,
+  MessagesApi,
+  WaAdapter,
+  WebhookInput,
+  WebhookVerification,
+} from './core/adapter';
 export type { Capability, CapabilitySet } from './core/capabilities';
 export { CAPABILITIES, hasCapability, isKnownCapability } from './core/capabilities';
 export { digitsOnly, isGroupChatId, isJid, normalizeChatId } from './core/chat-id';

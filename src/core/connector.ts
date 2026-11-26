@@ -11,6 +11,7 @@ import type {
   PresenceApi,
   WaAdapter,
   WebhookInput,
+  WebhookVerification,
 } from './adapter';
 import { type Capability, type CapabilitySet, hasCapability } from './capabilities';
 import { normalizeChatId, normalizeInviteLink } from './chat-id';
@@ -78,6 +79,12 @@ export interface WebhooksApi {
   parse(input: WebhookInput): CanonicalEvent[];
   /** `parse` + emissão para os listeners registrados via `on()`. */
   dispatch(input: WebhookInput): Promise<CanonicalEvent[]>;
+  /**
+   * Verifica a assinatura do webhook (header + `rawBody`) quando o adapter implementa
+   * `verifyWebhook`. Falha fechado: adapter sem suporte, ou qualquer erro, vira `{ valid: false }`.
+   * Nunca lança.
+   */
+  verify(input: WebhookInput): WebhookVerification;
 }
 
 /**
@@ -515,6 +522,7 @@ export class WaConnector {
 
     this.webhooks = {
       parse: (input) => this.parseWebhook(input),
+      verify: (input) => this.verifyWebhook(input),
       dispatch: async (input) => {
         const events = this.parseWebhook(input);
         for (const event of events) {
@@ -1215,6 +1223,24 @@ export class WaConnector {
       });
     }
     return to;
+  }
+
+  private verifyWebhook(input: WebhookInput): WebhookVerification {
+    const verify = this.adapter.verifyWebhook;
+    if (typeof verify !== 'function') {
+      return {
+        valid: false,
+        reason: `O provider "${this.provider}" não suporta verificação de assinatura de webhook.`,
+      };
+    }
+    try {
+      return verify.call(this.adapter, input);
+    } catch (error) {
+      return {
+        valid: false,
+        reason: `Erro ao verificar assinatura: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
   }
 
   private parseWebhook(input: WebhookInput): CanonicalEvent[] {

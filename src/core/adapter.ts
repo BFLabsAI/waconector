@@ -69,6 +69,14 @@ export interface WebhookInput {
   rawBody?: string;
 }
 
+/** Resultado de `WaAdapter.verifyWebhook` / `WaConnector.webhooks.verify`. */
+export interface WebhookVerification {
+  /** `true` só quando a assinatura do provider foi checada e confere. Nunca `true` por omissão. */
+  valid: boolean;
+  /** Motivo quando `valid` é `false` (assinatura ausente/inválida, chave ou `rawBody` faltando). */
+  reason?: string;
+}
+
 export interface InstanceApi {
   connect(): Promise<ConnectResult>;
   status(): Promise<InstanceStatus>;
@@ -272,4 +280,11 @@ export interface WaAdapter {
   /** Namespace OPCIONAL (ADR-0019) — mesmo critério de `chats?` acima. */
   readonly calls?: CallsApi;
   parseWebhook(input: WebhookInput): CanonicalEvent[];
+  /**
+   * OPCIONAL (aditivo): verifica a assinatura (HMAC ou similar) de um webhook do provider contra a
+   * chave configurada no adapter. Falha fechado: sem chave, sem `rawBody` ou sem header de
+   * assinatura, devolve `valid: false`. Nunca lança. Adapters cujo provider não assina webhooks
+   * simplesmente não o implementam.
+   */
+  verifyWebhook?(input: WebhookInput): WebhookVerification;
 }
