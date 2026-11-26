@@ -62,6 +62,8 @@ export interface MediaRef {
   base64?: string;
   mimeType?: string;
   filename?: string;
+  /** Tamanho do arquivo em bytes, quando o provider informa. */
+  size?: number;
   /** Identificador opaco do arquivo no provider — nunca usado como entrada de `sendMedia`. */
   id?: string;
 }

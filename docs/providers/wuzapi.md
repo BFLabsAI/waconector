@@ -851,3 +851,12 @@ BF), `Info.SenderAlt`, `Info.Sender`, `Info.Chat` — o primeiro que termina em 
 (em grupo `Chat` é `@g.us` e nunca casa). Sufixo de aparelho (`:12`) é removido. Sem telefone, `from`
 cai no `Sender` original. `fromLid` expõe o JID `@lid` (`sender_lid` da raiz, ou `Sender`/`SenderAlt`
 terminado em `@lid`). O payload original continua inteiro em `raw`.
+
+### Mídia recebida: bloco `s3` do webhook
+
+Com `media_delivery` = `s3` ou `both` a wuzapi acrescenta, na raiz do evento, `s3:
+{bucket,key,fileName,mimeType,size,url}` (a `url` é pré-assinada, 1h de validade); com `base64`/`both`
+acrescenta `base64`/`mimeType`/`fileName`. O adapter normaliza para `WaMessage.media`: `url` (a do
+`s3`, no lugar da URL cifrada do CDN do WhatsApp), `mimeType`, `filename`, `size`, `id` (= `key` do
+objeto) e, quando houver, `base64`. Base64 não é exigido. Sem nenhum dos dois, `media` traz só o
+descritor do protobuf (`kind`, `mimeType`, `size`, `url` cifrada), o bastante para `messages.download`.

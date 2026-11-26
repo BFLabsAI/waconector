@@ -1,0 +1,35 @@
+{
+  "type": "Message",
+  "userID": "1",
+  "instanceName": "minha-sessao",
+  "event": {
+    "Info": {
+      "ID": "3EB0FAKE00000000IMG01",
+      "Chat": "5511900000000@s.whatsapp.net",
+      "Sender": "5511900000000@s.whatsapp.net",
+      "IsFromMe": false,
+      "IsGroup": false,
+      "Timestamp": "2026-07-11T10:20:00Z"
+    },
+    "Message": {
+      "imageMessage": {
+        "URL": "https://mmg.exemplo.test/cifrado/abc.enc",
+        "mimetype": "image/jpeg",
+        "caption": "Foto de teste",
+        "fileLength": "48219",
+        "directPath": "/v/t62.7118-24/exemplo",
+        "mediaKey": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        "fileSHA256": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+        "fileEncSHA256": "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC="
+      }
+    }
+  },
+  "s3": {
+    "bucket": "bucket-de-teste",
+    "key": "users/1/5511900000000/2026/07/11/3EB0FAKE00000000IMG01.jpg",
+    "fileName": "foto-teste.jpg",
+    "mimeType": "image/jpeg",
+    "size": 48219,
+    "url": "https://s3.exemplo.test/bucket-de-teste/users/1/foto-teste.jpg?X-Amz-Signature=assinatura-ficticia&X-Amz-Expires=3600"
+  }
+}

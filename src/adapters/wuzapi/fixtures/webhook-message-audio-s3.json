@@ -1,0 +1,31 @@
+{
+  "type": "Message",
+  "userID": "1",
+  "instanceName": "minha-sessao",
+  "event": {
+    "Info": {
+      "ID": "3EB0FAKE00000000AUD01",
+      "Chat": "5511900000000@s.whatsapp.net",
+      "Sender": "5511900000000@s.whatsapp.net",
+      "IsFromMe": false,
+      "IsGroup": false,
+      "Timestamp": "2026-07-11T10:21:00Z"
+    },
+    "Message": {
+      "audioMessage": {
+        "URL": "https://mmg.exemplo.test/cifrado/audio.enc",
+        "mimetype": "audio/ogg; codecs=opus",
+        "fileLength": 9120,
+        "PTT": true
+      }
+    }
+  },
+  "s3": {
+    "bucket": "bucket-de-teste",
+    "key": "users/1/5511900000000/2026/07/11/3EB0FAKE00000000AUD01.ogg",
+    "fileName": "3EB0FAKE00000000AUD01.ogg",
+    "mimeType": "audio/ogg",
+    "size": 9120,
+    "url": "https://s3.exemplo.test/bucket-de-teste/users/1/audio.ogg?X-Amz-Signature=assinatura-ficticia"
+  }
+}

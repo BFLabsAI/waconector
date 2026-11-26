@@ -1548,36 +1548,56 @@ function buildMediaRef(
 ): MediaRef | undefined {
   // Mesmo cuidado de casing do adapter Evolution GO: os structs gerados do whatsmeow tagueiam este
   // campo como `URL` maiúsculo — aceito aqui por analogia (não confirmado especificamente para o
-  // Wuzapi), com fallback defensivo para `url` minúsculo.
-  const url = asString(record.URL) ?? asString(record.url);
-  if (!url) return undefined;
+  // Wuzapi), com fallback defensivo para `url` minúsculo. Essa URL é a do CDN do WhatsApp (conteúdo
+  // cifrado): só serve de descritor para `messages.download`, não para ser aberta direto.
   return {
     kind,
-    url,
+    url: asString(record.URL) ?? asString(record.url),
     mimeType: asString(record.mimetype),
     filename: asString(record.fileName),
+    size: asNumberLike(record.fileLength),
   };
 }
 
+function isMediaKind(kind: MessageKind): kind is MediaKind {
+  return (
+    kind === 'image' ||
+    kind === 'video' ||
+    kind === 'audio' ||
+    kind === 'document' ||
+    kind === 'sticker'
+  );
+}
+
 /**
- * Completa `content.media` com os campos `mimeType`/`base64`/`fileName` do NÍVEL RAIZ do evento
- * (fora de `event`), presentes quando o usuário tem `media_delivery` configurado para incluir
- * base64 (default). Só se aplica a tipos de mídia (não `text`/`unknown`).
+ * Completa `content.media` com o que a wuzapi anexa no NÍVEL RAIZ do evento (fora de `event`),
+ * conforme o `media_delivery` do usuário:
+ *
+ * - bloco `s3` (`{bucket,key,fileName,mimeType,size,url}`, `url` pré-assinada de curta duração —
+ *   1h na nossa wuzapi): vira `media.url` (substitui a URL cifrada do CDN do WhatsApp), com
+ *   `mimeType`/`filename`/`size` e `id` = `key` do objeto. NÃO exige base64.
+ * - `base64`/`mimeType`/`fileName` (entrega `base64` ou `both`): preenche `media.base64`.
+ *
+ * Só se aplica a tipos de mídia (não `text`/`unknown`).
  */
 function attachRootMedia(
   content: MessageContent,
   eventRecord: Record<string, unknown>,
 ): MediaRef | undefined {
-  if (content.kind === 'text' || content.kind === 'unknown') return content.media;
+  if (!isMediaKind(content.kind)) return content.media;
+  const s3 = asRecord(eventRecord.s3);
   const rootBase64 = asString(eventRecord.base64);
-  if (!rootBase64) return content.media;
-  const kind = content.kind as MediaKind;
+  if (!s3 && !rootBase64) return content.media;
+  const kind = content.kind;
+  const base = content.media;
   return {
     kind,
-    url: content.media?.url,
+    url: asString(s3?.url) ?? base?.url,
     base64: rootBase64,
-    mimeType: content.media?.mimeType ?? asString(eventRecord.mimeType),
-    filename: content.media?.filename ?? asString(eventRecord.fileName),
+    mimeType: asString(s3?.mimeType) ?? base?.mimeType ?? asString(eventRecord.mimeType),
+    filename: asString(s3?.fileName) ?? base?.filename ?? asString(eventRecord.fileName),
+    size: asNumberLike(s3?.size) ?? base?.size,
+    id: asString(s3?.key),
   };
 }
 
@@ -1768,6 +1788,16 @@ function asStringArray(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === 'string')
     : [];
+}
+
+/** Número vindo como `number` ou string numérica (uint64 do protobuf chega como string em alguns JSONs). */
+function asNumberLike(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
 }
 
 /** `data.Timestamp` de `POST /chat/send/*` é confirmado em SEGUNDOS (unix), não ms. */
