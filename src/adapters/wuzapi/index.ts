@@ -1419,6 +1419,7 @@ function mapMessageEvent(
   }
 
   const fromMe = asBoolean(info.IsFromMe) ?? false;
+  const sender = resolveSender(info, eventRecord);
   const content = mapMessageContent(asRecord(data.Message));
 
   // Quando media_delivery inclui base64 (default do usuário), o Wuzapi anexa mimeType/base64/
@@ -1429,7 +1430,9 @@ function mapMessageEvent(
   const message: WaMessage = {
     id: asString(info.ID) ?? '',
     chatId: asString(info.Chat) ?? '',
-    from: asString(info.Sender),
+    from: sender.from,
+    fromLid: sender.lid,
+    isGroup: asBoolean(info.IsGroup) ?? (asString(info.Chat)?.endsWith('@g.us') || undefined),
     fromMe,
     timestamp: toEpochMs(info.Timestamp) ?? Date.now(),
     kind: content.kind,
@@ -1444,6 +1447,44 @@ function mapMessageEvent(
     instanceId,
     message,
     raw: rawBody,
+  };
+}
+
+const PHONE_JID_SUFFIX = '@s.whatsapp.net';
+const LID_JID_SUFFIX = '@lid';
+
+/** `número:aparelho@servidor` -> `número@servidor` (o JID do whatsmeow carrega o aparelho). */
+function stripDevice(jid: string): string {
+  const at = jid.indexOf('@');
+  if (at < 0) return jid;
+  const colon = jid.indexOf(':');
+  return colon >= 0 && colon < at ? `${jid.slice(0, colon)}${jid.slice(at)}` : jid;
+}
+
+/**
+ * Resolve quem escreveu a mensagem. O whatsmeow pode entregar `Info.Sender` como `@lid` (conta
+ * com privacidade por LID), caso em que o telefone vem em `Info.SenderAlt` e, na nossa wuzapi
+ * (fork BF), também em `sender_pn` na raiz do evento. Ordem de resolução do TELEFONE: `sender_pn`,
+ * `Info.SenderAlt`, `Info.Sender`, `Info.Chat` — o primeiro que termina em `@s.whatsapp.net` (em
+ * grupo, `Chat` é `@g.us` e nunca casa). Sem nenhum telefone, `from` cai no `Sender` original
+ * (ex.: um `@lid`). O JID `@lid` é exposto à parte (`sender_lid` da raiz, senão o primeiro entre
+ * `Sender`/`SenderAlt` terminado em `@lid`). O payload original segue intacto em `raw`.
+ */
+function resolveSender(
+  info: Record<string, unknown>,
+  eventRecord: Record<string, unknown>,
+): { from?: string; lid?: string } {
+  const sender = asString(info.Sender);
+  const senderAlt = asString(info.SenderAlt);
+  const candidates = [asString(eventRecord.sender_pn), senderAlt, sender, asString(info.Chat)];
+  const phone = candidates.find((jid) => jid?.endsWith(PHONE_JID_SUFFIX) ?? false);
+  const lidSource = [asString(eventRecord.sender_lid), sender, senderAlt].find(
+    (jid) => jid?.endsWith(LID_JID_SUFFIX) ?? false,
+  );
+  const from = phone ?? sender ?? senderAlt;
+  return {
+    from: from !== undefined ? stripDevice(from) : undefined,
+    lid: lidSource !== undefined ? stripDevice(lidSource) : undefined,
   };
 }
 

@@ -1,0 +1,20 @@
+{
+  "type": "Message",
+  "userID": "1",
+  "instanceName": "minha-sessao",
+  "sender_pn": "5511900000000:12@s.whatsapp.net",
+  "sender_lid": "270000000000001@lid",
+  "event": {
+    "Info": {
+      "ID": "3EB0FAKE00000000PN001",
+      "Chat": "270000000000001@lid",
+      "Sender": "270000000000001@lid",
+      "IsFromMe": false,
+      "IsGroup": false,
+      "Timestamp": "2026-07-11T10:11:00Z"
+    },
+    "Message": {
+      "conversation": "Mensagem com sender_pn"
+    }
+  }
+}

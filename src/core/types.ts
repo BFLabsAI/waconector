@@ -78,7 +78,15 @@ export interface ReactionInfo {
 export interface WaMessage {
   id: string;
   chatId: string;
+  /**
+   * Remetente. Preferencialmente o JID de TELEFONE (`...@s.whatsapp.net`); só cai em outro formato
+   * (ex.: `@lid`) quando o provider não entrega nenhum telefone resolvido.
+   */
   from?: string;
+  /** JID `@lid` do remetente, quando o provider o expõe (útil para correlacionar quando `from` é telefone). */
+  fromLid?: string;
+  /** `true` quando a mensagem veio de um grupo (`chatId` termina em `@g.us`). */
+  isGroup?: boolean;
   fromMe: boolean;
   /** Epoch em milissegundos. */
   timestamp: number;

@@ -837,3 +837,17 @@ empírica contra uma instância real.
 - O comportamento exato do campo `expiration` (aceito na criação do usuário) não foi confirmado
   além do que o próprio README afirma ("not enforced by the system") — fora do escopo deste
   adapter.
+
+## Extensões do fork BF Labs (`bf-wuzapi`)
+
+O fork `BFLabsAI/bf-wuzapi` acrescenta campos ao envelope do webhook e tem rotas além do upstream.
+Esta seção documenta o que o adapter consome dessas extensões. Tudo é aditivo: contra um wuzapi
+upstream, os campos extras simplesmente não aparecem e o comportamento anterior é mantido.
+
+### Remetente (`WaMessage.from` / `fromLid` / `isGroup`)
+
+`Info.Sender` pode vir como `@lid`. O telefone é resolvido na ordem `sender_pn` (raiz do evento, fork
+BF), `Info.SenderAlt`, `Info.Sender`, `Info.Chat` — o primeiro que termina em `@s.whatsapp.net`
+(em grupo `Chat` é `@g.us` e nunca casa). Sufixo de aparelho (`:12`) é removido. Sem telefone, `from`
+cai no `Sender` original. `fromLid` expõe o JID `@lid` (`sender_lid` da raiz, ou `Sender`/`SenderAlt`
+terminado em `@lid`). O payload original continua inteiro em `raw`.
