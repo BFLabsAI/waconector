@@ -1769,7 +1769,7 @@ function mapMessageEvent(
   // Quando media_delivery inclui base64 (default do usuário), o Wuzapi anexa mimeType/base64/
   // fileName no NÍVEL RAIZ do evento entregue (fora de "event") — não dentro de event.Message.
   // Usado para completar WaMessage.media quando o tipo detectado não é texto.
-  const media = attachRootMedia(content, eventRecord);
+  const media = withFallbackFileName(attachRootMedia(content, eventRecord), asString(info.ID));
 
   const message: WaMessage = {
     id: asString(info.ID) ?? '',
@@ -1975,13 +1975,12 @@ function buildMediaRef(
   kind: MediaRef['kind'],
   record: Record<string, unknown>,
 ): MediaRef | undefined {
-  // Mesmo cuidado de casing do adapter Evolution GO: os structs gerados do whatsmeow tagueiam este
-  // campo como `URL` maiúsculo — aceito aqui por analogia (não confirmado especificamente para o
-  // Wuzapi), com fallback defensivo para `url` minúsculo. Essa URL é a do CDN do WhatsApp (conteúdo
-  // cifrado): só serve de descritor para `messages.download`, não para ser aberta direto.
+  // `URL` (maiúsculo no protojson do whatsmeow) é o endereço do CDN do WhatsApp com o conteúdo
+  // CIFRADO: não serve para baixar nem exibir, então NÃO vira `media.url` (só o bloco `s3` ou o
+  // `base64` do webhook trazem arquivo utilizável). O descritor completo segue em `raw`, de onde
+  // `messages.download` o lê.
   return {
     kind,
-    url: asString(record.URL) ?? asString(record.url),
     mimeType: asString(record.mimetype),
     filename: asString(record.fileName),
     size: asNumberLike(record.fileLength),
@@ -2033,6 +2032,15 @@ function attachRootMedia(
     id: asString(s3?.key),
     voice: base?.voice,
   };
+}
+
+/** Sem nome vindo de nenhuma fonte, gera `anexo-<id><ext>` (ext pelo mimetype) para a mídia recebida. */
+function withFallbackFileName(
+  media: MediaRef | undefined,
+  messageId: string | undefined,
+): MediaRef | undefined {
+  if (!media || media.filename || !messageId) return media;
+  return { ...media, filename: `anexo-${messageId}${extensionFromMime(media.mimeType)}` };
 }
 
 /** Extensão (sem ponto) para os mimetypes mais comuns de mídia do WhatsApp. */
