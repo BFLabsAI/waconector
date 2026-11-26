@@ -11,6 +11,7 @@ export const CAPABILITIES = [
   'instance.pairingCode',
   'instance.status',
   'instance.logout',
+  'instance.getSelf',
   'messages.sendText',
   'messages.sendMedia',
   'messages.sendReaction',

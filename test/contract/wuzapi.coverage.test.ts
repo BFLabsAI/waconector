@@ -40,9 +40,9 @@ const CHAT = '5511900000000';
 const CHAT_JID = '5511900000000@s.whatsapp.net';
 
 describe('wuzapi: capabilities do fork BF (chats, labels, channels, download, menções)', () => {
-  it('declara 55 capabilities e deixa de fora o que a API não suporta', () => {
+  it('declara 56 capabilities e deixa de fora o que a API não suporta', () => {
     const { adapter } = setup();
-    expect(adapter.capabilities).toHaveLength(55);
+    expect(adapter.capabilities).toHaveLength(56);
     for (const capability of [
       'instance.pairingCode',
       'messages.forward',

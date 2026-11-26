@@ -69,6 +69,10 @@ export interface ConnectionUpdateEvent extends BaseEvent {
   type: 'connection.update';
   state: InstanceState;
   qr?: string;
+  /** JID de telefone da própria instância (sem aparelho), quando o evento o traz (ex.: pareamento). */
+  selfJid?: string;
+  /** JID `@lid` da própria instância (sem aparelho), quando o evento o traz (ex.: pareamento). */
+  selfLid?: string;
 }
 
 /**

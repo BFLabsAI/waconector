@@ -21,6 +21,24 @@ export interface InstanceStatus {
   raw: unknown;
 }
 
+/**
+ * Identidade da PRÓPRIA instância conectada (ver `InstanceApi.getSelf`). Todos os campos são
+ * opcionais: `lid` só existe quando o provider/conta o tem e o resolve; instância desconectada
+ * não tem identidade.
+ */
+export interface InstanceSelf {
+  /** JID de telefone da instância, sem aparelho (`5511...@s.whatsapp.net`). */
+  jid?: string;
+  /** Telefone em dígitos (parte de usuário de `jid`). */
+  phone?: string;
+  /** JID `@lid` da instância, sem aparelho. */
+  lid?: string;
+  /** Nome/push name da instância, quando o provider informa. */
+  name?: string;
+  /** Dados do provider, SEM credenciais (nunca o token nem a URL de proxy). */
+  raw: unknown;
+}
+
 export interface ConnectResult {
   /** Conteúdo do QR code (string/base64) quando o provider expõe. */
   qr?: string;
